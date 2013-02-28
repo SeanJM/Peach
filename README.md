@@ -20,14 +20,14 @@
     DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, 
     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. 
 
-Functions
+# Functions
 
-=== Function: template.get()
+## Function: template.get()
 
-- USAGE: 
+### USAGE: 
 template.get({name:'template',src:'./templates/template.html'},function (html) {});
 
-- EXAMPLE
+### EXAMPLE
 template.get({name:'work',src:./templates/work-page-templates.html},function (html) {
   var keys    = {foo:'bar'}
   /* Get element, insert keys and convert to jQuery object */
@@ -36,9 +36,9 @@ template.get({name:'work',src:./templates/work-page-templates.html},function (ht
   element.appendTo('body');
 });
 
-- Function: template.insert()
+## Function: template.insert()
 
-- USAGE: 
+### USAGE: 
 
 var templatePre = '<div>{{template-tag}}</div>';
 var keys        = {template-tag:foobar};
