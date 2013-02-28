@@ -51,3 +51,31 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
     var element = template.insert{{if {{template-tag}} <div>{{template-tag}}</div> end}}
 
 The if statement checks if `{{template-tag}}` is undefined or empty
+
+## Including the templates on the page
+    <div src="url" template="template-name" keys="keyObject" onload="function"></div>
+So, this would be in your index.html or any html file.
+#### SRC tag
+The function will look for a template file corresponding to that URL
+
+#### Template tag
+The function will look for a corresponding template named `template-name` in the referenced template file, eg:
+        
+        <div template="template-name">
+            <h1>{{title}}</h1>
+            <p>{{text}}</p>
+        </div>
+    
+#### Keys
+keys, for this to work you'll need to create an object called `template.keys['keyObject']` this object, must be inside an array. 
+Example:
+    template.keys['keyObject'] = [{
+        title:'This is awesome',
+        text:'This paragraph is awesome'
+        },{
+        title:'This is awesome and will make sure the template creates multiple instances of this template on the page',
+        text:'This paragraph is awesome and what the title said'
+        }];
+        
+However many objects inside the array is how ever many templated objects that will be created inside that template element.
+
