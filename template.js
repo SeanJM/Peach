@@ -25,6 +25,7 @@
 */
 
 var template = {};
+var template.keys = {};
 
 /* 
 USAGE: 
