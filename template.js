@@ -25,7 +25,7 @@
 */
 
 var template = {};
-var template.keys = {};
+template.keys = {};
 
 /* 
 USAGE: 
@@ -119,5 +119,5 @@ template.init = function(activeScreen,callback) {
 
 $(function () {
   /* Initialize scanning for template tag */
-  template.init('body');
+  template.init($('body'));
 });
