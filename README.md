@@ -28,22 +28,23 @@
 template.get({name:'template',src:'./templates/template.html'},function (html) {});
 
 ### EXAMPLE
-template.get({name:'work',src:./templates/work-page-templates.html},function (html) {
-  var keys    = {foo:'bar'}
-  /* Get element, insert keys and convert to jQuery object */
-  var element = $(template.insert({template:html,keys:keys}));
+`template.get({name:'work',src:./templates/work-page-templates.html},function (html) {
+`  var keys    = {foo:'bar'}
+`  /* Get element, insert keys and convert to jQuery object */
+`  var element = $(template.insert({template:html,keys:keys}));
 
-  element.appendTo('body');
-});
+`  element.appendTo('body');
+`});
 
 ## Function: template.insert()
 
 ### USAGE: 
 
-var templatePre = '<div>{{template-tag}}</div>';
-var keys        = {template-tag:foobar};
-var element     = template.insert({template:templatePre,keys:keys});
+`var templatePre = '<div>{{template-tag}}</div>';
+`var keys        = {template-tag:foobar};
+`var element     = template.insert({template:templatePre,keys:keys});
 
-Optional If statements: 'template.insert{{if {{template-tag}} <div>{{template-tag}}</div> end}}'
+Optional If statements: 
+`var element = template.insert{{if {{template-tag}} <div>{{template-tag}}</div> end}}
 
 The if statement checks if {{template-tag}} is undefined or empty
