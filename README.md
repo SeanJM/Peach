@@ -63,14 +63,15 @@ The function will look for a template file corresponding to that URL
 #### Template tag
 The function will look for a corresponding template named `template-name` in the referenced template file, eg:
         
-        <div template="template-name">
-            <h1>{{title}}</h1>
-            <p>{{text}}</p>
-        </div>
+    <div template="template-name">
+        <h1>{{title}}</h1>
+        <p>{{text}}</p>
+    </div>
     
 #### Keys
 keys, for this to work you'll need to create an object called `template.keys['keyObject']` this object, must be inside an array. 
 Example:
+
     template.keys['keyObject'] = [{
         title:'This is awesome',
         text:'This paragraph is awesome'
