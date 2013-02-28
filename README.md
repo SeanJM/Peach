@@ -29,11 +29,10 @@
 
 ### EXAMPLE
 `template.get({name:'work',src:./templates/work-page-templates.html},function (html) {`
-`    var keys    = {foo:'bar'}`
-`  /* Get element, insert keys and convert to jQuery object */`
-`  var element = $(template.insert({template:html,keys:keys}));`
-``
-`  element.appendTo('body');`
+`       var keys    = {foo:'bar'}`
+`       /* Get element, insert keys and convert to jQuery object */`
+`       var element = $(template.insert({template:html,keys:keys}));`
+`       element.appendTo('body');`
 `});`
 
 ## Function: template.insert()
