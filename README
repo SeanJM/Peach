@@ -1,4 +1,3 @@
-
     Simple as simple gets templates 
     Sean J MacIsaac (seanjmacisaac@gmail.com)
     VERSION: 0.5
@@ -23,7 +22,7 @@
 
 Functions
 
-- Function: template.get()
+=== Function: template.get()
 
 - USAGE: 
 template.get({name:'template',src:'./templates/template.html'},function (html) {});
