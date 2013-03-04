@@ -26,6 +26,7 @@
 
 var template = {};
 template.keys = {};
+fun = {};
 
 /* 
 USAGE: 
@@ -82,8 +83,12 @@ template.fill = function (obj,callback) {
   var str     = obj['template'],
       keys    = obj['keys'],
       output  = [];
-
-  for (i=0;i<keys.length;i++) { output.push(template.insert(str,keys[i])); }
+  if (typeof keys.length != 'undefined') { 
+    for (i=0;i<keys.length;i++) { output.push(template.insert({'template': str,keys:keys[i]})); } 
+  }
+  else {
+    output.push(template.insert({'template': str,'keys': keys})); 
+  }
   if (typeof callback == 'function') { callback(output.join('')); }
   return output.join(''); 
 }
@@ -94,7 +99,7 @@ template.init = function(activeScreen,callback) {
   console.log('Scanning for templates...');
 
   activeScreen.find('[template]').each(function(){
-    var keys         = $(this).attr('keys');
+    var keyRef       = $(this).attr('keys');
     var onload       = $(this).attr('onload');
     var processed;
     var selected     = $(this);
@@ -102,15 +107,17 @@ template.init = function(activeScreen,callback) {
     var temp         = $('<div></div>');
     var templateName = $(this).attr('template');
 
-    temp.get({'src':src,'template':templateName},function (str) {
+    template.get({'src':src,'template':templateName},function (str) {
 
-      if (typeof keys != 'undefined') { processed = $(template.fill({'template':str,'keys':template.keys[keys]()})); }
-      if (typeof keys == 'undefined') { processed = $(str); }
+      if (typeof keyRef != 'undefined') { 
+        processed = $(template.fill({'template':str,'keys':template.keys[keyRef]})); 
+      }
+      else { processed = $(str); }
 
       selected.children().remove();
       selected.append(processed);
       
-      if (typeof fun[onload] == 'function') { fun[onload](processed); }
+      if (typeof fun[onload] != 'undefined') { fun[onload](processed); }
       if (typeof callback == 'function') { callback(); }
     
     });
