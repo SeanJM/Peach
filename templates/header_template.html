@@ -1,5 +1,10 @@
+<template logo-medium>
+  <div class="logo-medium"></div>
+</template>
+
 <template header>
   <div class="header">
+    {{get logo-medium get}}
     {{get
       // This is a comment //
       navigation
@@ -8,6 +13,7 @@
     {{wrap test
       Testing {{test}} the wrap function, some text in here
     wrap}}
+    {{[test1,test2,test3](test_{{$name}})}}
   </div>
 </template>
 

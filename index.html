@@ -15,7 +15,9 @@
         //  When text is attached to the array, the array will pass the name value
             for the property to $prop back the names from array declaration //
 
-        else  #init([header,body,footer](./templates/{{$name}}_template.html,))
+        else  #init([ header,
+                      body,
+                      footer ](./templates/{{$name}}_template.html,))
       if}}
 
       {{get header,body,footer get}}

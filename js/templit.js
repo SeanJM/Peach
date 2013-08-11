@@ -112,31 +112,29 @@ var templit = {
     return false;
   },
   each: function (options) {
-    var template = options.template;
     // Each statement
-    if (template.match(/{{(\s+|)each\s+(.*?)\s+each(\s+|)}}/)) {
-      return template.replace(/({{(\s+|)each\s+(.*?)\s+each(\s+|)}})/g,function (m,key) {
-        var template     = options.template;
-        var data         = options.data;
+    var regEx = /{{(\s+|)each\s+(.*?)\s+each(\s+|)}}/g;
+    if (options.template.match(regEx)) {
+      options.template = options.template.replace(regEx,function (m,key) {
         var out          = "";
         var group        = m.match(/{{(\s+|)each\s+([a-zA-Z0-9-]+)\s+do\s+([a-zA-Z0-9-]+)/);
         var iterator     = group[2];
         var templateName = group[3];
 
-        if (data.hasOwnProperty(iterator)) {
+        if (options.data.hasOwnProperty(iterator)) {
           var html = [];
-          for (var i=0;i<data[iterator].length;i++) {
+          for (var i=0;i<options.data[iterator].length;i++) {
             var index             = (i+1);
             var oddOrEven         = (i%2 === 0) ? 'odd' : 'even';
-            var newData           = data[iterator][i];
-            var isLast            = (i+1 === data[iterator].length) ? 'true' : 'false';
+            var newData           = options.data[iterator][i];
+            var isLast            = (i+1 === options.data[iterator].length) ? 'true' : 'false';
             var isFirst           = (i < 1) ? 'true' : 'false';
             newData['$index']     = index;
             newData['$oddOrEven'] = oddOrEven;
             newData['$isLast']    = isLast;
             newData['$isFirst']   = isFirst;
 
-            var eachOptions   = {
+            var eachOptions   = templit.options({
               "$index"       : index,
               "$oddOrEven"   : oddOrEven,
               "$isLast"      : isLast,
@@ -147,13 +145,13 @@ var templit = {
               "data"         : newData,
               "context"      : '',
               "url"          : options['url']
-            }
+            });
 
             if (templit.debug) {
               eachOptions.template = '<!-- Template: '+options['url']+' >> '+templateName+' -->'+eachOptions.template;
             }
 
-            html.push(templit.it(eachOptions));
+            html.push(templit.it(eachOptions).template);
           }
           out = html.join('');
         } else {
@@ -161,9 +159,8 @@ var templit = {
         }
         return out;
       });
-    } else {
-      return template;
     }
+    return options;
   },
   find: function (string) {
     var regex = new RegExp("<template\\s+"+string+">(.*?)</template>","i");
@@ -174,10 +171,9 @@ var templit = {
     if (val) return val[1];
   },
   get: function (options) {
-    var template = options.template;
     // Each statement
-    if (template.match(/{{(\s+|)get\s+(.*?)\s+get(\s+|)}}/)) {
-      return options.template.replace(/{{(\s+|)get\s+(.*?)\s+get(\s+|)}}/g,function (m,key) {
+    if (options.template.match(/{{(\s+|)get\s+(.*?)\s+get(\s+|)}}/)) {
+      options.template = options.template.replace(/{{(\s+|)get\s+(.*?)\s+get(\s+|)}}/g,function (m,key) {
         var group = m.match(/{{(\s+|)get\s+(.*?)\s+get(\s+|)}}/);
         var out = [];
         var templateName = group[2].split(',');
@@ -194,28 +190,27 @@ var templit = {
             "context"      : '',
             "url"          : options['url']
           }
-          out.push(templit.it(newOptions));
+          out.push(templit.it(newOptions).template);
         });
         return out.join('');
       });
-    } else {
-      return template;
     }
+    return options;
   },
   wrap: function (options) {
     if (options.template.match(/{{(\s+|)wrap\s+(.*?)\s+wrap(\s+|)}}/)) {
       console.log('wrap');
-      return options.template.replace(/{{(\s+|)wrap\s+(.*?)\s+wrap(\s|)}}/g,function (m,key) {
+      options.template = options.template.replace(/{{(\s+|)wrap\s+(.*?)\s+wrap(\s|)}}/g,function (m,key) {
         var group           = m.match(/{{(\s+|)wrap\s+([a-zA-Z0-9-]+)\s+(.*?)\s+wrap(\s|)}}/);
         var templateName    = group[2];
         var content         = group[3];
         var template        = templit.find(templateName).replace(/{{}}/g,content);
         var newOptions      = options;
         newOptions.template = template;
-        return templit.it(newOptions);
+        return templit.it(newOptions).template;
       });
     }
-    return options.template;
+    return options;
   },
   insert: function (options) {
     var template = options.template;
@@ -225,11 +220,12 @@ var templit = {
       data = templit.dataFilter[options.templateName](options);
     }
 
-    return template.replace(/{{([\$a-zA-Z0-9-]+)}}/g,function (m,key) {
+    options.template = template.replace(/{{([\$a-zA-Z0-9-]+)}}/g,function (m,key) {
       var out = "";
       out = data.hasOwnProperty(key) ? data[key] :"";
       return out;
     });
+    return options;
   },
   ifmatch: function (options) {
     // Next thing is fixing ifmatch
@@ -270,16 +266,17 @@ var templit = {
       });
     }
     if (template.match(/{{(\s+|)if\s+(.*?)\s+if(\s+|)}}/)) {
-      return execute();
-    } else {
-      return options.template;
+      options.template = execute();
     }
+    return options;
   },
   cereal: function (options) {
-    if (options.template.match(/\[(.*?)\]\((.*?)\)/)) {
-      return options.template.replace(/\[(.*?)\]\((.*?)\)/g,function (m,key) {
+    var regEx = /\[(.*?)\]\((.*?){{(.*?)}}(.*?)\)/g;
+
+    if (options.template.match(regEx)) {
+      options.template = options.template.replace(regEx,function (m,key) {
         var group = m.match(/\[(.*?)\]\((.*?)\)/);
-        var arr   = group[1].split(',');
+        var arr   = group[1].replace(/\s+/g,'').split(',');
         var micro = group[2];
         var out   = [];
         $.each(arr,function (i,k) {
@@ -288,12 +285,12 @@ var templit = {
             '$name': k
           }
           var options = templit.options({data: variables,template: micro});
-          out.push(templit.it(options));
+          out.push(templit.it(options).template);
         });
         return out.join('');
       });
     }
-    return options.template;
+    return options;
   },
   templateAdd: function (string) {
     templit.template += string.replace(/(\r\n|\n|\r)/gm,'');
@@ -316,35 +313,35 @@ var templit = {
           templateLoad(arr,index+1,callback);
         }
         if ((index+1) === arr.length && typeof callback === 'function') {
-          callback(out);
+          callback(options);
         }
       });
     }
     if (options.template.match(/#init\((.*?)\)/)) {
-      out = options.template.replace(/#init\((.*?)\)/,function (m,key) {
+      options.template = options.template.replace(/#init\((.*?)\)/,function (m,key) {
         var templateFiles = cleanArray(m.match(/\((.*?)\)/)[1].split(','));
         templateLoad(templateFiles,0,callback);
         return '';
       });
     }
-    return options.template;
+    return options;
   },
   removeComments: function (options) {
-    return options.template.replace(/{{(.*?)\/\/(.*?)\/\/(.*?)}}/,function (m,key) {
+    options.template = options.template.replace(/{{(.*?)\/\/(.*?)\/\/(.*?)}}/,function (m,key) {
       return m.replace(/\/\/(.*?)\/\//,'');
     });
+    return options;
   },
   it: function (options) {
-    options.template = templit.removeComments(options);
-    options.template = templit.cereal(options);
-    options.template = templit.ifmatch(options);
-    options.template = templit.wrap(options);
-    options.template = templit.cmd_init(options);
-    options.template = templit.get(options);
-    options.template = templit.insert(options);
-    options.template = templit.each(options);
-
-    return options.template;
+    options = templit.removeComments(options);
+    options = templit.cereal(options);
+    options = templit.ifmatch(options);
+    options = templit.wrap(options);
+    options = templit.cmd_init(options);
+    options = templit.get(options);
+    options = templit.insert(options);
+    options = templit.each(options);
+    return options;
   },
   auto: function (url,data,callback) {
     // Get all template tags on page
@@ -385,12 +382,13 @@ var templit = {
 
   },
   loader: function (options,callback) {
-    options.template = templit.ifmatch(options);
-    options.template = templit.cereal(options);
-    options.template = templit.cmd_init(options,function (template) {
+    options = templit.ifmatch(options);
+    options = templit.cereal(options);
+    options = templit.cmd_init(options,function (newOptions) {
       // Loaded all templates into templit.template;
-      options.template = template;
-      options.template = templit.it(options);
+      options.template = newOptions.template;
+      options          = templit.it(options);
+      console.log(options);
       $('body').prepend(options.template);
       if (typeof callback === 'function') callback();
     });
