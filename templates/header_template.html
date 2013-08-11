@@ -1,0 +1,26 @@
+<template header>
+  <div class="header">
+    {{get
+      // This is a comment //
+      navigation
+    get}}
+    Some stuff in the header
+    {{wrap test
+      Testing {{test}} the wrap function, some text in here
+    wrap}}
+  </div>
+</template>
+
+<template navigation>
+  <ul>
+    {{each nav do navigation-item each}}
+  </ul>
+</template>
+
+<template navigation-item>
+  <li><a href="{{href}}">{{name}}</a></li>
+</template>
+
+<template test>
+  <div class="test">For example: {{}}</div>
+</template>

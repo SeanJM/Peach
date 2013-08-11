@@ -1,0 +1,20 @@
+{
+  "src":{
+    "production":false
+  }
+  "title": {
+    "title":"Templit version 2.0"
+  },
+  "mlp": {
+    "items": [{
+      "name":"test1",
+      "href":"#"
+    },{
+      "name":"test2"
+    },{
+      "name":"test3"
+    },{
+      "name":"test4"
+    }]
+  }
+}
