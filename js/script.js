@@ -14,7 +14,7 @@ var json = {
 }
 
 $(function () {
-  templit.init({
+  whiskers.init({
     data: json
   });
 });

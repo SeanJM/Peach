@@ -10,7 +10,7 @@
 // Allow people access to this tool somehow, so they can create templates online
 // Don't store any of their data and offer it as a trully free service
 // on production
-var templit = {
+var whiskers = {
   template: '',
   dataFilter: {
 
@@ -30,31 +30,12 @@ var templit = {
   },
   throwError: function (options) {
     console.log('Error',options);
-    var styles =  '<style>'+
-                    '.templit-error                   { font-family: Arial, Helvetica, Sans-serif;margin: auto; width: 500px; background: #ffffff; position: absolute; box-shadow: 0 3px 6px rgba(0,0,0,0.2); color: #3d3232; z-index: 99999}'+
-                    '.templit-error-title             { color: #fff; padding: 2px 20px 0; margin: 0; line-height: 50px; font-size: 16px; background: #831118}'+
-                    '.templit-error-message-container { padding: 20px 20px 20px; margin: 0; line-height: 20px; font-size: 13px;}'+
-                    '.templit-error-content           { padding: 0px 20px 30px;}'+
-                    '.templit-error-highlight         { font-weight: bold; background: #d3666c; padding: 0 5px;}'+
-                    '.templit-error-subtitle          { font-size: 13px; line-height: 20px; margin: 0 0 10px 0;}'+
-                    '.templit-error-message           { font-size: 13px;}'+
-                    '.templit-error-code              { font-size: 12px; background: #d8d8d8; padding: 10px; border-radius: 10px;}'+
-                    '.templit-error-example-text      { font-size: 13px; margin: 16px 0 0 0; }'+
-                  '</style>';
-
-    var window =  '<div class="templit-error">'+
-                    '<div class="templit-error-title">{{error-code}}</div>'+
-                    '{{if error-message <div class="templit-error-message-container">{{error-message}}</div> if}}'+
-                    '<div class="templit-error-content">'+
-                      '{{if error <h2 class="templit-error-subtitle">JSON:</h2><div class="templit-error-code">{{error}}</div> if}}'+
-                      '{{if example <h2 class="templit-error-subtitle">Example:</h2><div class="templit-error-code">{{example}}</div> if}}'+
-                      '{{if example-text <p class="templit-error-example-text">{{example-text}}</p> if}}'+
-                    '</div>'+
-                  '</div>';
+    var window =  whiskers.find('whiskers-error-window');
     var data = {};
+
     if (options.code === 1) {
       data['error-code'] = 'JSON is missing <strong>"init"</strong> at root';
-      data['error-message'] = 'Templit initializer requires a JSON object named <span class="templit-error-highlight">init</span>';
+      data['error-message'] = 'whiskers initializer requires a JSON object named <span class="whiskers-error-highlight">init</span>';
       data['example'] = '{\n "init": {\n "header":"header",\n "body":"header"\n }\n }';
     }
     if (options.code === 2) {
@@ -67,13 +48,13 @@ var templit = {
       data['error-code'] = 'JSON Object requires the matching key for the template name';
       data['error-message'] = 'Check JSON for a key with the name: <strong>'+options.templateName+'</strong>';
       data['error'] = JSON.stringify(options.data).replace(regex,function(m,key) {
-        return "<span class='templitError-highlight'>"+m+"</span>";
+        return "<span class='whiskersError-highlight'>"+m+"</span>";
       });
-      data['example'] = '{<span class="templitError-highlight">"'+options.templateName+'"</span>:'+JSON.stringify(options.data)+'}'
+      data['example'] = '{<span class="whiskersError-highlight">"'+options.templateName+'"</span>:'+JSON.stringify(options.data)+'}'
     } else if (options.code === 5) {
       data['error-code'] = 'Missing JSON Object';
-      data['error-message'] = 'Templit initializer requires a JSON object';
-      data['example'] = 'templit.init({\n\t"src": "templates/templates.html",\n\t"data": JSON\n},callback)';
+      data['error-message'] = 'whiskers initializer requires a JSON object';
+      data['example'] = 'whiskers.init({\n\t"src": "templates/templates.html",\n\t"data": JSON\n},callback)';
     } else if (options.code === 6) {
       data['error-code'] = 'Invalid URL';
       data['error-message'] = 'The url <strong>"'+options.src+'"</strong> is not a valid URL. Please check the address and try again';
@@ -86,28 +67,29 @@ var templit = {
       data['error-code'] = 'JSON Object requires the matching key for the template name';
       data['error-message'] = 'Check JSON for a key with the name: <strong>'+options.templateName+'</strong>';
       data['error'] = JSON.stringify(options.data).replace(regex,function(m,key) {
-        return "<span class='templitError-highlight'>"+m+"</span>";
+        return "<span class='whiskersError-highlight'>"+m+"</span>";
       });
-      data['example'] = '{<span class="templitError-highlight">"'+options.templateName+'"</span>:'+JSON.stringify(options.data)+'}'
+      data['example'] = '{<span class="whiskersError-highlight">"'+options.templateName+'"</span>:'+JSON.stringify(options.data)+'}'
     } else if (options.code === 9) {
       var regex = new RegExp(options.iterator,'ig');
       data['error-code'] = 'Iterator <strong>'+options.iterator+'</strong> does not exist'
       data['error-message'] = 'Check JSON for:'+options.iterator;
       data['error'] = JSON.stringify(options.data).replace(regex,function(m,key) {
-        return "<span class='templitError-highlight'>"+m+"</span>";
+        return "<span class='whiskersError-highlight'>"+m+"</span>";
       });
     }
 
     function execute() {
-      var options   = templit.options({template: window,data: data});
-      var processed = $(templit.it(options));
-      $('head').append(styles);
+      console.log('execute error window');
+      var options   = whiskers.options({template: window,data: data});
+      var processed = $(whiskers.it(options).template);
+      console.log(processed);
       $('body').append(processed);
       processed.css('left',($('body').width()/2)-(processed.width()/2)+'px');
       processed.on('click',function () { processed.remove(); });
     }
 
-    if (templit.debug) execute();
+    if (whiskers.debug) execute();
 
     return false;
   },
@@ -134,28 +116,28 @@ var templit = {
             newData['$isLast']    = isLast;
             newData['$isFirst']   = isFirst;
 
-            var eachOptions   = templit.options({
+            var eachOptions   = whiskers.options({
               "$index"       : index,
               "$oddOrEven"   : oddOrEven,
               "$isLast"      : isLast,
               "$isFirst"     : isFirst,
               "templateName" : templateName,
-              "template"     : templit.find(templateName),
+              "template"     : whiskers.find(templateName),
               "data-context" : options["data-context"],
               "data"         : newData,
               "context"      : '',
               "url"          : options['url']
             });
 
-            if (templit.debug) {
+            if (whiskers.debug) {
               eachOptions.template = '<!-- Template: '+options['url']+' >> '+templateName+' -->'+eachOptions.template;
             }
 
-            html.push(templit.it(eachOptions).template);
+            html.push(whiskers.it(eachOptions).template);
           }
           out = html.join('');
         } else {
-          templit.throwError({code: 9,iterator: iterator,data: options.data});
+          whiskers.throwError({code: 9,iterator: iterator,data: options.data});
         }
         return out;
       });
@@ -164,33 +146,35 @@ var templit = {
   },
   find: function (string) {
     var regex = new RegExp("<template\\s+"+string+">(.*?)</template>","i");
-    var val = templit.template.match(regex);
-    if (val === null) {
-      templit.throwError({code: 7,templateName: string});
-    }
+    var val = whiskers.template.match(regex);
+    if (val === null) return false;
     if (val) return val[1];
   },
   get: function (options) {
-    // Each statement
+    // get statement
     if (options.template.match(/{{(\s+|)get\s+(.*?)\s+get(\s+|)}}/)) {
       options.template = options.template.replace(/{{(\s+|)get\s+(.*?)\s+get(\s+|)}}/g,function (m,key) {
         var group = m.match(/{{(\s+|)get\s+(.*?)\s+get(\s+|)}}/);
         var out = [];
         var templateName = group[2].split(',');
         $.each(templateName,function (i,k) {
-          var newOptions   = {
-            "$index"       : "1",
-            "$oddOrEven"   : "odd",
-            "$isLast"      : "true",
-            "$isFirst"     : "true",
-            "templateName" : k,
-            "template"     : templit.find(k),
-            "data-context" : options["data-context"],
-            "data"         : options["data"],
-            "context"      : '',
-            "url"          : options['url']
+          if (whiskers.find(k)) {
+            var newOptions   = {
+              "$index"       : "1",
+              "$oddOrEven"   : "odd",
+              "$isLast"      : "true",
+              "$isFirst"     : "true",
+              "templateName" : k,
+              "template"     : whiskers.find(k),
+              "data-context" : options["data-context"],
+              "data"         : options["data"],
+              "context"      : '',
+              "url"          : options['url']
+            }
+            out.push(whiskers.it(newOptions).template);
+          } else {
+            whiskers.throwError({code: 7,templateName: k});
           }
-          out.push(templit.it(newOptions).template);
         });
         return out.join('');
       });
@@ -204,10 +188,10 @@ var templit = {
         var group           = m.match(/{{(\s+|)wrap\s+([a-zA-Z0-9-]+)\s+(.*?)\s+wrap(\s|)}}/);
         var templateName    = group[2];
         var content         = group[3];
-        var template        = templit.find(templateName).replace(/{{}}/g,content);
+        var template        = whiskers.find(templateName).replace(/{{}}/g,content);
         var newOptions      = options;
         newOptions.template = template;
-        return templit.it(newOptions).template;
+        return whiskers.it(newOptions).template;
       });
     }
     return options;
@@ -216,8 +200,8 @@ var templit = {
     var template = options.template;
     var data     = options.data;
 
-    if (typeof templit.dataFilter[options.templateName] === 'function') {
-      data = templit.dataFilter[options.templateName](options);
+    if (typeof whiskers.dataFilter[options.templateName] === 'function') {
+      data = whiskers.dataFilter[options.templateName](options);
     }
 
     options.template = template.replace(/{{([\$a-zA-Z0-9-]+)}}/g,function (m,key) {
@@ -284,8 +268,8 @@ var templit = {
             '$index':(i+1).toString(),
             '$name': k
           }
-          var options = templit.options({data: variables,template: micro});
-          out.push(templit.it(options).template);
+          var options = whiskers.options({data: variables,template: micro});
+          out.push(whiskers.it(options).template);
         });
         return out.join('');
       });
@@ -293,7 +277,26 @@ var templit = {
     return options;
   },
   templateAdd: function (string) {
-    templit.template += string.replace(/(\r\n|\n|\r)/gm,'');
+    whiskers.template += string.replace(/(\r\n|\n|\r)/gm,'');
+  },
+  templateLoad: function (arr,index,callback) {
+    function execute() {
+      $('<div/>').load(arr[index],function (d,k) {
+        console.log('Template Load');
+        if (k === 'error') {
+          whiskers.throwError({code: 2,file: arr[index]});
+        } else {
+          whiskers.templateAdd(d);
+          whiskers.templateLoad(arr,index+1,callback);
+        }
+        if ((index+1) === arr.length && typeof callback === 'function') {
+          callback();
+        }
+      });
+    }
+    if (typeof arr[index] !== 'undefined') {
+      execute();
+    }
   },
   cmd_init: function (options,callback) {
     var out;
@@ -304,23 +307,10 @@ var templit = {
       });
       return newArr;
     }
-    function templateLoad (arr,index,callback) {
-      $('<div/>').load(arr[index],function (d,k) {
-        if (k === 'error') {
-          templit.throwError({code: 2,file: arr[index]});
-        } else {
-          templit.templateAdd(d);
-          templateLoad(arr,index+1,callback);
-        }
-        if ((index+1) === arr.length && typeof callback === 'function') {
-          callback(options);
-        }
-      });
-    }
     if (options.template.match(/#init\((.*?)\)/)) {
       options.template = options.template.replace(/#init\((.*?)\)/,function (m,key) {
         var templateFiles = cleanArray(m.match(/\((.*?)\)/)[1].split(','));
-        templateLoad(templateFiles,0,callback);
+        whiskers.templateLoad(templateFiles,0,callback);
         return '';
       });
     }
@@ -333,75 +323,70 @@ var templit = {
     return options;
   },
   it: function (options) {
-    options = templit.removeComments(options);
-    options = templit.cereal(options);
-    options = templit.ifmatch(options);
-    options = templit.wrap(options);
-    options = templit.cmd_init(options);
-    options = templit.get(options);
-    options = templit.insert(options);
-    options = templit.each(options);
+    console.log('whiskers it');
+    options = whiskers.removeComments(options);
+    options = whiskers.ifmatch(options);
+    options = whiskers.cereal(options);
+    options = whiskers.wrap(options);
+    options = whiskers.get(options);
+    options = whiskers.insert(options);
+    options = whiskers.each(options);
     return options;
   },
-  auto: function (url,data,callback) {
-    // Get all template tags on page
-    var deffereds = $('[template]').map(function (i) {
-      var el           = $(this);
-      var templateName = el.attr('template');
-      var options      = {
-        "$index"       : 1,
-        "$oddOrEven"   : 'odd',
-        "templateName" : templateName,
-        "template"     : templit.find(templateName),
-        "data-context" : data,
-        "data"         : data[templateName],
-        "context"      : el,
-        "url"          : url
-      }
-
-      if (typeof options.template === 'undefined') {
-        templit.throwError({code: 7,templateName: options.templateName,url: options.url});
-      } else if (typeof data[templateName] === 'undefined' && options.template.match(/{{(.*?)}}/)) {
-        templit.throwError({code: 5,templateName: templateName,data: data});
-      }
-
-      var processed = templit.it(options);
-
-      if (templit.debug) {
-        processed = '<!-- Template: '+url+' >> '+templateName+' -->\n'+processed;
-      }
-
-      el.html(processed);
-
-    });
-
-    // Perform Callback when all templating is done
-    $.when.apply(null, deffereds.get()).then(function () {
-      if (typeof callback === 'function') callback();
-    });
-
-  },
   loader: function (options,callback) {
-    options = templit.ifmatch(options);
-    options = templit.cereal(options);
-    options = templit.cmd_init(options,function (newOptions) {
-      // Loaded all templates into templit.template;
-      options.template = newOptions.template;
-      options          = templit.it(options);
+    options = whiskers.ifmatch(options);
+    options = whiskers.cereal(options);
+    options = whiskers.cmd_init(options,function () {
+      console.log('cmd_init');
+      // Loaded all templates into whiskers.template;
       console.log(options);
+      options = whiskers.it(options);
       $('body').prepend(options.template);
       if (typeof callback === 'function') callback();
     });
   },
-  init:function (options,callback) {
-    var frame     = $('template');
-    var string    = frame.html().replace(/(\r\n|\n|\r)/gm,'');
-    templit.debug = (typeof frame.attr('debug') === 'string');
-    if (typeof options.data.init === 'undefined') {
-      templit.throwError({code: 1})
-    } else {
-      options = templit.options({template: string,data: options.data});
-      templit.loader(options,callback);
+  system_init: function (callback) {
+    var systemTemplates = ['./_whiskers/templates/dialogs.html'];
+    var css             = ['./_whiskers/css/styles.css'];
+    var timeout         = 100;
+    var whiskersCss     = $('<div class="whiskers_css"></div>').hide();
+
+    function remove() {
+      clearInterval(load);
+      whiskersCss.remove();
     }
+
+    $('body').append(whiskersCss);
+    $('head').append('<link rel="stylesheet" href="'+css[0]+'" type="text/css">');
+
+    var load = setInterval(function () {
+      timeout--;
+      if ($('.whiskers_css').css('text-align') === 'center') {
+        remove();
+        whiskers.templateLoad(systemTemplates,0,callback);
+      }
+      else if (timeout < 0) {
+        alert('Whiskers\nThere must be something wrong with your Whiskers directory. Whiskers was unable to load!');
+        remove();
+      }
+    },100);
+  },
+  init:function (options,callback) {
+    var frame      = $('template');
+    var string     = frame.html().replace(/(\r\n|\n|\r)/gm,'');
+    whiskers.debug = (typeof frame.attr('debug') === 'string');
+
+    function execute() {
+      if (typeof options.data.init === 'undefined') {
+        whiskers.throwError({code: 1});
+      } else {
+        options = whiskers.options({template: string,data: options.data});
+        whiskers.loader(options,callback);
+      }
+    }
+
+    whiskers.system_init(function () {
+      execute();
+    });
   }
 }
