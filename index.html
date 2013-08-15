@@ -9,18 +9,41 @@
     <link rel="stylesheet" href="css/styles.css">
   </head>
   <body>
-    <template debug>
-      {{if production #init(template/template_compiled.html)
+    <template whiskers="debug">
+      {:
 
-        //  When text is attached to the array, the array will pass the name value
-            for the property to $prop back the names from array declaration //
+        // Testing the comments system //
+        if production
+          init template/template_compiled.html endinit
+        else
+          init  ./templates/header_template.html,
+                ./templates/body_template.html,
+                ./templates/footer_template.html
+          endinit
+        endif
 
-        else  #init([ header,
-                      body,
-                      footer ](./templates/{{$name}}_template.html,))
-      if}}
+        get
+          header,body,footer
+        endget
 
-      {{get header,body,footer get}}
+        wrap testing
+          My Friendly UI
+        endwrap
+
+      :}
+
+        if test5
+          <div class="test">some content 1 $[]</div>
+        else if test2 == 'test3'
+          <div class="test2">some content 2</div>
+        else
+          <div class="test3">some other content 3</div>
+        endif
+
+        if test == 'test'
+          some other content
+        endif
+
     </template>
     <script src="http://code.jquery.com/jquery-1.10.0.min.js"></script>
     <script src="_whiskers/js/whiskers.js"></script>

@@ -1,9 +1,10 @@
 var json = {
+  "test":"This is some testing text",
+  "test2":"test2",
   "init": {
     "header":"header",
     "body":"body",
   },
-  "test":"[This is some testing data]",
   "nav":[{
     "name":"1",
     "href":"#"

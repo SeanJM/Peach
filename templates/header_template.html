@@ -4,27 +4,29 @@
 
 <template header>
   <div class="header">
-    {{get logo-medium get}}
-    {{get
-      // This is a comment //
-      navigation
-    get}}
-    Some stuff in the header
-    {{wrap test
-      Testing {{test}} the wrap function, some text in here
-    wrap}}
-    <ul>[test1,test2,test3](<li>test_{{$name}}</li>)</ul>
+    {:
+      get logo-medium,navigation endget
+      Some stuff in the header
+      wrap test
+        Testing =test the wrap function, some text in here
+      endwrap
+      <ul>[test,'test2','test3']->(<li>test_=value</li>)</ul>
+    :}
   </div>
 </template>
 
 <template navigation>
   <ul>
-    {{each nav do navigation-item each}}
+    {:
+      each nav
+        navigation-item
+      endeach
+    :}
   </ul>
 </template>
 
 <template navigation-item>
-  <li><a href="{{href}}">{{name}}</a></li>
+  <li><a href="=href">=name</a></li>
 </template>
 
 <template test>

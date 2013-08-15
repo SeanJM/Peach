@@ -1,11 +1,35 @@
 <template whiskers-error-window>
-  <div class="whiskers_error">
-    <div class="whiskers_error-title">{{error-code}}</div>
-    {{if error-message <div class="whiskers_error-message-container">{{error-message}}</div> if}}
-    <div class="whiskers_error-content">
-      {{if error <h2 class="whiskers_error-subtitle">JSON:</h2><div class="whiskers_error-code">{{error}}</div> if}}
-      {{if example <h2 class="whiskers_error-subtitle">Example:</h2><div class="whiskers_error-code">{{example}}</div> if}}
-      {{if example-text <p class="whiskers_error-example-text">{{example-text}}</p> if}}
+  wrap whiskers-window-chrome
+    <div class="whiskers_error">
+      <div class="whiskers_error-title">{:=error-code:}</div>
+      {:
+        if error-message
+          <div class="whiskers_error-message-container">=error-message</div>
+        endif
+      :}
+      <div class="whiskers_error-content">
+        {:
+          if error
+            <h2 class="whiskers_error-subtitle">JSON:</h2><div class="whiskers_error-code">=error</div>
+          endif
+
+          if example
+            <h2 class="whiskers_error-subtitle">Example:</h2><div class="whiskers_error-code">=example</div>
+          endif
+
+          if example-text
+            <p class="whiskers_error-example-text">=example-text</p>
+          endif
+        :}
+      </div>
+    </div>
+  endwrap
+</template>
+
+<template whiskers-window-chrome>
+  <div class="whiskers_error-window">
+    <div class="whiskers_error-window_chrome">
+      {{}}
     </div>
   </div>
 </template>
