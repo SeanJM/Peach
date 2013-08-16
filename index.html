@@ -11,7 +11,6 @@
   <body>
     <template whiskers="debug">
       {:
-
         // Testing the comments system //
         if production
           init template/template_compiled.html endinit
@@ -22,15 +21,13 @@
           endinit
         endif
 
+        wrap testing
+          My Friendly UI and <div>some</div> more stuff in here
+
         get
           header,body,footer
-        endget
-
-        wrap testing
-          My Friendly UI
-        endwrap
-
       :}
+
 
         if test5
           <div class="test">some content 1 $[]</div>
