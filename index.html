@@ -9,41 +9,18 @@
     <link rel="stylesheet" href="css/styles.css">
   </head>
   <body>
-    <template whiskers="debug">
-      {:
-        // Testing the comments system //
-        if production
-          init template/template_compiled.html endinit
-        else
-          init  ./templates/header_template.html,
-                ./templates/body_template.html,
-                ./templates/footer_template.html
-          endinit
-        endif
-
-        wrap testing
-          My Friendly UI and <div>some</div> more stuff in here
-
-        get
-          header,body,footer
-      :}
-
-
-        if test5
-          <div class="test">some content 1 $[]</div>
-        else if test2 == 'test3'
-          <div class="test2">some content 2</div>
-        else
-          <div class="test3">some other content 3</div>
-        endif
-
-        if test == 'test'
-          some other content
-        endif
+    <template koala="
+      debug;
+      templates:
+        ./templates/header_template.html"
+    >
+    {:
+      get header /get
+    :}
 
     </template>
     <script src="http://code.jquery.com/jquery-1.10.0.min.js"></script>
-    <script src="_whiskers/js/whiskers.js"></script>
+    <script src="_koala/js/koala.js"></script>
     <script src="js/script.js"></script>
   </body>
 </HTML>

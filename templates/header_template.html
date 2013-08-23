@@ -1,33 +1,29 @@
-<template logo-medium>
-  <div class="logo-medium"></div>
-</template>
-
-<template header>
+<template heasder>
   <div class="header">
     {:
-      get logo-medium,navigation endget
-      Some stuff in the header
-      wrap test
-        Testing =test the wrap function, some text in here
-      <ul>[test,'test2','test3']->(<li>test_=value</li>)</ul>
+      get logo-medium,navigation /get
+
+      // <ul>[test,'test2','test3']=>(<li>test_=value</li>)</ul>
     :}
   </div>
+</template>
+
+<template logo-medium>
+  <div class="logo-medium"></div>
 </template>
 
 <template navigation>
   <ul>
     {:
-      each nav
-        navigation-item
-      endeach
+      each nav navigation-item;
     :}
   </ul>
 </template>
 
 <template navigation-item>
-  <li><a href="=href">=name</a></li>
+  <li><a href="=href">{:=name:}</a></li>
 </template>
 
 <template test>
-  <div class="test">For example: {{}}</div>
+  <div class="=class">For example: =test {{}}</div>
 </template>
