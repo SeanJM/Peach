@@ -27,7 +27,7 @@ var script = {
 }
 
 $(function () {
-  koala.init({
+  whiskers.init({
     data: json,
     onload: function () { script.init(); }
   });

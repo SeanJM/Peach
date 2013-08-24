@@ -1,0 +1,79 @@
+<template whiskers-error-window>
+  {:
+    wrap whiskers-modal{icon:error}
+      <div class="whiskers_error">
+
+        <div class="whiskers_error-code">Error: %error-code</div>
+        <div class="whiskers_error-title">%error-title</div>
+          if %error-message:
+            <div class="whiskers_error-message-container">testing %error-message</div>
+          /if
+        <div class="whiskers_error-content">
+          if %error:
+            <h2 class="whiskers_error-subtitle">JSON:</h2><div class="whiskers_error-code">%error</div>
+          /if
+
+          if %example:
+            <h2 class="whiskers_error-subtitle">Example:</h2>
+            <pre class="whiskers_error-example">%example</pre>
+          /if
+
+          if %example-text:
+            <p class="whiskers_error-example-text">%example-text</p>
+          /if
+        </div>
+      </div>
+    /wrap
+  :}
+</template>
+
+<template whiskers-modal>
+  <div class="whiskers_modal">
+    <div class="whiskers_modal_container">
+      <div class="whiskers_modal_window">
+        <div class="whiskers_modal_icon-container">
+          <div class="whiskers_modal_icon-%icon"></div>
+        </div>
+        <div class="whiskers_modal_chrome">
+          {{}}
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<template whiksers-error-window_2>
+  get
+    whiskers-error-window_=error-code{
+      error-code    : Template File: =file does not exist,
+      error-message : Make sure your template file is a real file before refreshing.
+    }
+  /wrap
+</template>
+
+<template whiskers-error-window_3>
+  wrap
+    whiskers-error-window{
+      error-code    : Invalid URL,
+      error-message : The url <strong>"'+options.src+'"</strong> is not a valid URL. Please check the address and try again
+    }
+  /wrap
+</template>
+
+<template whiskers-error-window_4>
+  wrap
+    error-code    : JSON Object requires the matching key for the template name,
+    error-message : Check JSON for a key with the name: <strong>'+options.templateName+'</strong>',
+    error         : =error
+    example       : <span class="whiskersError-highlight">=templateName</span>=data
+  /wrap
+</template>
+
+<template whiskers-error-window_5>
+  error-code    : Missing JSON Object,
+  error-message : whiskers initializer requires a JSON object,
+  example       : whiskers.init({
+      "src": "templates/templates.html",
+      "data": JSON
+    },callback);
+</template>

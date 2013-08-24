@@ -1,5 +1,5 @@
-[class*="koala_"],
-[class*="koala_"] * {
+[class*="whiskers_"],
+[class*="whiskers_"] * {
   margin            : 0;
   padding           : 0;
   vertical-align    : top;
@@ -15,7 +15,7 @@
 
 /* Error Window */
 
-.koala_modal {
+.whiskers_modal {
   position: absolute;
   top: 0;
   left: 0;
@@ -24,7 +24,7 @@
   background: rgba(0,0,0,0.5);
 }
 
-.koala_modal_container {
+.whiskers_modal_container {
   position: absolute;
   top: 10%;
   left: 50%;
@@ -32,14 +32,14 @@
   height: 0;
 }
 
-.koala_modal_window {
+.whiskers_modal_window {
   z-index: 99999;
   position: absolute;
   left: -250px;
   width: 500px;
 }
 
-.koala_modal_chrome {
+.whiskers_modal_chrome {
   width: 100%;
   color: #3d3232;
   background: #ffffff;
@@ -49,7 +49,7 @@
   border-radius: 20px;
 }
 
-.koala_error-title {
+.whiskers_error-title {
   display: block;
   margin: 0 10px 10px;
   padding: 2px 10px 0;
@@ -61,59 +61,59 @@
   background: #992257;
 }
 
-.koala_modal_icon-container {
+.whiskers_modal_icon-container {
   width: 100%;
   text-align: center;
   z-index: 1;
   position: relative;
 }
 
-.koala_modal_icon-error {
+.whiskers_modal_icon-error {
   width: 235px;
   height: 160px;
   background: url('../img/sprites_error.png');
 }
 
-.koala_error-message-container {
+.whiskers_error-message-container {
   margin: 0;
   padding: 20px 20px 20px;
   font-size: 13px;
   line-height: 20px;
 }
 
-.koala_error {
+.whiskers_error {
   width: 100%;
 }
 
-.koala_error-code {
+.whiskers_error-code {
   width: 100%;
   text-align: center;
   font-size: 50px;
   font-weight: bold;
 }
 
-.koala_error-content {
+.whiskers_error-content {
   width: 100%;
   padding: 0 20px 30px;
 }
 
-.koala_error-highlight {
+.whiskers_error-highlight {
   padding: 0 5px;
   font-weight: bold;
   background: #d3666c;
 }
 
-.koala_error-subtitle {
+.whiskers_error-subtitle {
   margin: 0 0 10px 0;
   font-size: 13px;
   line-height: 20px;
 }
 
-.koala_error-message {
+.whiskers_error-message {
   font-size: 13px;
 }
 
-.koala_error-example {
+.whiskers_error-example {
   display: block;
   width: 100%;
   padding: 10px;
@@ -123,12 +123,12 @@
   background: #d8d8d8;
 }
 
-.koala_error-example-text {
+.whiskers_error-example-text {
   margin: 16px 0 0 0;
   font-size: 13px;
 }
 
 /* Dummy class for detecting CSS loading */
-.koala_css {
+.whiskers_css {
   text-align: center;
 }
