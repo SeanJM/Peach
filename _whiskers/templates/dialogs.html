@@ -2,7 +2,11 @@
   {:
     wrap whiskers-modal{icon:error}
       <div class="whiskers_error">
-
+        if %error-code == 7:
+          This is the 7th code
+        else:
+          this is some code I dont know
+        /if
         <div class="whiskers_error-code">Error: %error-code</div>
         <div class="whiskers_error-title">%error-title</div>
           if %error-message:

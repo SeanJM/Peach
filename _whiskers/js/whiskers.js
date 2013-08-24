@@ -177,7 +177,7 @@ var whiskers = {
       var boolGroup,left,condition,right,bool,content,ifgroup;
 
       out = out.replace(pattern,function (m) {
-        var ifPattern      = new RegExp('^([\\t ]+|)if[ ]+([a-zA-Z0-9\\-_<>%\'\"!&\|; ]+)?:('+whiskers._matchString()+'?(else|/if))','m');
+        var ifPattern      = new RegExp('^([\\t ]+|)if[ ]+([a-zA-Z0-9\\-_<=>%\'\"!&\|; ]+)?:('+whiskers._matchString()+'?(else|/if))','m');
         var elsePattern    = new RegExp('^([\\t ]+|):('+whiskers._matchString()+'?/if)','m');
         var contentPattern = new RegExp('('+whiskers._matchString()+')(else|/if)');
         var ifgroup        = m.match(ifPattern);
@@ -185,13 +185,14 @@ var whiskers = {
         var condition,content;
 
         while (ifgroup) {
-          ifgroup = m.match(ifPattern);
+          ifgroup   = m.match(ifPattern);
+          elsegroup = m.match(elsePattern);
           // if Statement
           if (ifgroup) {
             condition = ifmatch(ifgroup[2]);
-            console.log(condition);
             content   = ifgroup[3].match(contentPattern)[1];
           } else {
+            console.log(ifPattern);
             if (elsegroup) {
               condition = true;
               content   = elsegroup[2].match(contentPattern)[1];
