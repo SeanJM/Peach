@@ -1,23 +1,23 @@
 # Whiskers
-#### By Sean J MacIsaac (seanjmacisaac@gmail.com)
-#### VERSION: 0.5
+###### By Sean J MacIsaac (seanjmacisaac@gmail.com)
+###### VERSION: 0.7
 
-#### The MIT License (MIT)
-#### Copyright (c) 2013 Sean J MacIsaac
+###### The MIT License (MIT)
+###### Copyright (c) 2013 Sean J MacIsaac
 
-#### This script requires jQuery to work and it is included
+###### This script requires jQuery to work and it is included
 
-### INITIATING A WHISKER
+## INITIATING A WHISKER
     {:[Your Whiskers in Here]:}
 
 Else, any whisker templates, loops and variables will not be evaluated.
 
-### TEMPLATES
+## TEMPLATES
 Templates are `template-name
 
 To add a template to a page, simply include the script and add `template
 
-#### PASSING VALUES
+## PASSING VALUES
 #### Single Values
     `template-name{property:value|%variable}
 #### Multiple Values
@@ -26,9 +26,9 @@ To add a template to a page, simply include the script and add `template
         property:value|%variable;
     }
 
-### VARIABLES
+## VARIABLES
 Variables are %variable-name
 
-### LOOPS
+## LOOPS
 A loops requires a variable with an iterator, that is a JSON value with an array of key/value pairs.
 %iterator`template
