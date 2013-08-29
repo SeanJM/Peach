@@ -30,4 +30,12 @@ Variables are %variable-name
 
 ## LOOPS
 A loops requires a variable with an iterator, that is a JSON value with an array of key/value pairs.
-%iterator`template
+An example of a Whiskers compatible iterator would be:
+    iterator: [{
+        name: Sally
+    },{
+        name: Michael
+    }]
+
+Putting this iterator into a template is done like this:
+    %iterator`template
