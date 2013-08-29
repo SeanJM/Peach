@@ -7,9 +7,10 @@
 
 #### This script requires jQuery to work and it is included
 
-### TEMPLATES 
-Templates are `template-name
-so, to add a template to a page, simply include the script and add `template
+### TEMPLATES
+Templates are ``template-name
+
+To add a template to a page, simply include the script and add `template
 
 #### PASSING VALUES
 #### Single Values
