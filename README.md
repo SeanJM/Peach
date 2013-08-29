@@ -7,6 +7,11 @@
 
 #### This script requires jQuery to work and it is included
 
+### INITIATING A WHISKER
+    {:[Your Whiskers in Here]:}
+
+Else, any whisker templates, loops and variables will not be evaluated.
+
 ### TEMPLATES
 Templates are `template-name
 
