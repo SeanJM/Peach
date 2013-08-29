@@ -1,32 +1,32 @@
 <template header>
-  <div class="{:%path:}">
-    <p>Header</p>
-    {:
-      `nav{%page:index}
-    :}
+  {:
+  `logo{type:med}
+  `logo{type:med}
+  <div class="header">
+    `nav{
+      page: %page;
+      path: header
+    }
   </div>
+  :}
 </template>
 
 <template logo>
-  <div class="{:%parent:}-logo"></div>
+  <div class="logo-%type"></div>
 </template>
 
 <template nav>
-  <ul class="{:%path:}">
-    {:
-      // this is a each-do loop
-      %nav`nav-item
-      if %page == index: some index endif
-    :}
+  {:
+  <ul class="%path_menu %page">
+    // this is a each-do loop
+    %nav`nav-item
+    if %page == index: some index endif
   </ul>
+  :}
 </template>
 
 <template nav-item>
   {:
-    <li class="%path"><a href="%href">%name</a></li>
+  <li class="%path"><a href="%href">%name</a></li>
   :}
-</template>
-
-<template test>
-  <div class="=class">For example: =test {{}}</div>
 </template>

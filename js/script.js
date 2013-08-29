@@ -10,13 +10,13 @@ var json = {
     "body":"body",
   },
   "nav":[{
-    "name":"1",
+    "name":"Home",
     "href":"#"
   },{
-    "name":"2",
+    "name":"About",
     "href":"#"
   },{
-    "name":"3",
+    "name":"Contact",
     "href":"#"
   }]
 }
