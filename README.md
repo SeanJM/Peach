@@ -3,7 +3,6 @@
 ###### VERSION: 0.7
 
 ###### The MIT License (MIT)
-###### Copyright (c) 2013 Sean J MacIsaac
 
 ###### This script requires jQuery to work and it is included
 
