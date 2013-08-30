@@ -136,24 +136,13 @@ var whiskers = {
     } else r = b;
     return r;
   },
-  _matchVar: '(?:!%|%)([a-zA-Z0-9-]+)(?:`([a-zA-Z-_]+))|(?:!%|%)([a-zA-Z0-9-]+[^-_<>!?=`\"\'%:;\n ])',
-  _matchTemplate: function (r) {
-    return whiskers._match('`([a-zA-Z0-9-_]+)',r);
-  },
+  _var: '((?:!%|%)([a-zA-Z0-9-]+))(`([a-zA-Z-]+))|((?:!%|%)([a-zA-Z0-9-]+))',
+  _get: '((?:!%|%)([a-zA-Z0-9-]+))(`([a-zA-Z-]+))|`([a-zA-Z0-9-]+)((?:\\s+|)({([^}]+)})|)',
+  _each: '%([a-zA-Z0-9-]+)`([a-zA-Z0-9-]+)(?:\\s+|)(?:{([^}]+)}|)',
+  _propAll: '([a-zA-Z0-9-]+)(\\s+|):([^;}]+)(?=;|}|$)',
+  _prop: '([a-zA-Z0-9-]+)(?:\\s+|):([^*]+)',
   _matchString: function (r) {
     return whiskers._match('[\\w=\\/@#%~`:,;\^\&\\.\"\'_\\-<>\\*\\n\\r\\t\\(\\)\\[\\]\\{\\}\\|\\?\\!\\$\\\\\ ]+',r);
-  },
-  _getPattern: function (r) {
-    return whiskers._match('(%([a-zA-Z0-9\-]+)|)`([a-zA-Z0-9-\-]+)(\\s+|)({(\\s+|)[\\sa-zA-Z0-9-%:<=>\"\';{}\/\.!@#\$\^\&\*\(\)_\+\\[\\]\\\\]+([^:]})|)',r);
-  },
-  _eachPattern: function (r) {
-    return whiskers._match(whiskers._matchVar+'(\\s+|)'+whiskers._matchTemplate());
-  },
-  _pattern: function (string) {
-    // Is the whitespace active element
-    var args    = (typeof string.split('/')[1] !== 'undefined') ? string.split('/')[1] : '';
-    var pattern = new RegExp('^([\\t ]+|)'+string.split('/')[0]+'[\\n\\r\\t ]+'+whiskers._matchString()+'?\/'+string.split('/')[0]+'([\\t ]+|)([\\n])',args+'m');
-    return pattern;
   },
   _find: function (string) {
     var options = {};
@@ -284,38 +273,16 @@ var whiskers = {
 
       return global;
     },
-    cereal: function (options) {
-      var pattern = /\[([^;]*?)\]=(&gt;|>)\(([^;]*?)\)/g;
-      var data    = options.data;
-      options.template = options.template.replace(pattern,function (m,key) {
-        var group = m.match(/\[([^;]*?)\]=(&gt;|>)\(([^;]*?)\)/);
-        var arr   = group[1].replace(/\s+/g,'').split(',');
-        var micro = group[3];
-        var out   = [];
-        $.each(arr,function (i,k) {
-          data['index']    = (i+1).toString();
-          data['value']    = whiskers._eval(k,data)
-          options.template = micro;
-          options.inside   = true;
-
-          out.push(whiskers.it(options).template);
-        });
-        return out.join('');
-      });
-      return options;
-    },
     insert: function (global) {
       var data = global.data;
-      var pattern = whiskers._match(whiskers._matchVar,'g');
+      var pattern = whiskers._match(whiskers._var,'g');
       global.template = global.template.replace(pattern,function (m) {
-        console.log(m);
-        var _match = m.match(whiskers._match(whiskers._matchVar));
         var _out   = m;
-        // Is insert
-        if (typeof _match[1] === 'undefined') {
-          var key  = _match[3];
-          if (data.hasOwnProperty(key)) {
-            _out = data[key];
+        var _match = m.match(whiskers._var);
+        // Not attached
+        if (typeof _match[2] === 'undefined') {
+          if (data.hasOwnProperty(_match[6])) {
+            _out = data[_match[6]];
           } else {
             _out = '';
           }
@@ -325,89 +292,99 @@ var whiskers = {
       return global;
     },
     get: function (global) {
-      var data = global.data;
-      global.template = global.template.replace(whiskers._getPattern('g'),function (m) {
-        if (!m.match(/^%[a-zA-Z0-9-]+/)) {
-          var _out               = '';
-          var arr                = [];
-          var single_propPattern = '([a-zA-Z0-9-_]+)(?=\\s+|):(?=\\s+|)([\\w\\-<=%\"\';\\{}\\[\\]/>\ ]+)';
-          var propPattern        = '([a-zA-Z0-9-_]+)(?=\\s+|):(?=\\s+|)([\\w\\-<=%\"\';\\{}\\[\\]/>\\ ]+)((?=;|;\\s+})|(?=\\s+}|}))';
-          var group              = m.match(whiskers._getPattern());
-          var properties         = group[5].match(whiskers._match(propPattern,'g'));
-          var templateName       = group[3];
-          var find               = whiskers._find(templateName);
-          var data               = {}
+      var properties,templateName,find,_match,data,_out;
+      var data               = global.data;
+      var pattern            = whiskers._match(whiskers._get,'g');
+      var _out               = '';
 
-          if (find) {
-            if (properties) {
-              for (var i=0;i<properties.length;i++) {
-                var _propGroup = properties[i].match(whiskers._match(single_propPattern));
-                global.data[_propGroup[1]] = _propGroup[2].replace(/^[ ]+/,'');
-              }
+      global.template = global.template.replace(pattern,function (m) {
+        var _match = m.match(whiskers._match(whiskers._get));
+        if (typeof _match[5] === 'string') {
+          _out         = '';
+          properties   = _match[8].match(whiskers._match(whiskers._propAll,'g'));
+          templateName = _match[5];
+          find         = whiskers._find(templateName);
+          data         = {}
+
+          if (find && properties) {
+            for (var i=0;i<properties.length;i++) {
+              var _propGroup = properties[i].match(whiskers._match(whiskers._prop));
+              global.data[_propGroup[1]] = _propGroup[2].replace(/^[ ]+/,'');
             }
             global.templateName = templateName;
             global.template     = find.template;
             global.src          = find.src;
             global.inside       = true;
             _out                = whiskers.it(global).template;
-
-            return _out;
-          } else {
-            //whiskers._throwError({code: 7,templateName: k});
-            return _out;
           }
+        } else if (typeof _match[12] === 'string') {
+          console.log(_match[12]);
         } else {
           return m;
         }
+
+        return _out;
       });
       return global;
     },
-    each: function (options) {
-      var data     = options.data;
-      var pattern  = whiskers._match(whiskers._matchVar,'g');
-      options.template = options.template.replace(pattern,function (m) {
-        var _match = m.match(whiskers._matchVar);
+    each: function (global) {
+      var data     = global.data;
+      var pattern  = whiskers._match(whiskers._each,'g');
+      global.template = global.template.replace(pattern,function (m) {
+        var _match = m.match(whiskers._each);
+        console.log(_match);
         if (typeof _match[1] === 'string') {
           var _out         = "";
           var iterator     = _match[1];
           var templateName = _match[2];
+          var properties   = _match[3].match(whiskers._match(whiskers._propAll,'g'));
+          var _data        = {};
+          var _global;
+
+          if (properties) {
+            for (var i=0;i<properties.length;i++) {
+              var _propGroup = properties[i].match(whiskers._match(whiskers._prop));
+              _data[_propGroup[1]] = _propGroup[2];
+            }
+          }
 
           if (data.hasOwnProperty(iterator)) {
             var html = [];
             for (var i=0;i<data[iterator].length;i++) {
               var index            = (i+1);
               var oddOrEven        = (i%2 === 0) ? 'odd' : 'even';
-              var newData          = data[iterator][i];
+              var newData          = $.extend(data[iterator][i],_data);
               var isLast           = (i+1 === data[iterator].length) ? 'true' : 'false';
               var isFirst          = (i < 1) ? 'true' : 'false';
               var find             = whiskers._find(templateName);
+
               newData['index']     = index;
               newData['oddOrEven'] = oddOrEven;
               newData['isLast']    = isLast;
               newData['isFirst']   = isFirst;
 
-              var _options   = whiskers.options({
+              _global   = whiskers.options({
                 "templateName" : templateName,
                 "template"     : find.template,
-                "data-context" : options["data-context"],
+                "data-context" : global["data-context"],
                 "data"         : newData,
                 "context"      : '',
                 "src"          : find.src,
                 "inside"       : true
               });
 
-              html.push(whiskers.it(_options).template);
+              html.push(whiskers.it(_global).template);
             }
             _out = html.join('');
           } else {
-            whiskers._throwError({code: 9,iterator: iterator,data: options.data});
+            whiskers._throwError({code: 9,iterator: iterator,data: global.data});
           }
           return _out;
         } else {
           return m;
         }
       });
-      return options;
+      return global;
     },
     clean: function (options) {
       var pattern = '{:('+whiskers._matchString()+'):}';

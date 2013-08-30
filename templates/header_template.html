@@ -5,7 +5,7 @@
   <div class="header">
     `nav{
       page: %page;
-      path: header
+      path: header;
     }
   </div>
   :}
@@ -19,14 +19,13 @@
   {:
   <ul class="%path_menu %page">
     // this is a each-do loop
-    %nav`nav-item
-    if %page == index: some index endif
+    %nav`nav-item{path:%path_menu}
   </ul>
   :}
 </template>
 
 <template nav-item>
   {:
-  <li class="%path"><a href="%href">%name</a></li>
+  <li class="%path_nav-item"><a href="%href">%name</a></li>
   :}
 </template>
