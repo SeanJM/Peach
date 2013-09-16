@@ -8,6 +8,13 @@
 // Allow people access to this tool somehow, so they can create templates online
 // Don't store any of their data and offer it as a trully free service
 // on production
+
+/* Global Stuff */
+
+String.prototype.repeat = function (n) {
+  return new Array(n+1).join(this);
+}
+
 var whiskers = {
   template: {},
   dataFilter: {},
@@ -158,17 +165,67 @@ var whiskers = {
     }
     return out.template;
   },
+  _getNest: function (pattern,string) {
+    pattern = [pattern,'(?:\\s+|)\\{','[\\s\\S]*?}'];
+    var match = string.match(pattern.join(''));
+    var i = 0;
+    if (match) {
+      while (match[0].match(/\{/g).length > match[0].match(/\}/g).length && i < 10) {
+        pattern.push('[\\s\\S]*?}');
+        match = string.match(pattern.join(''));
+        i++;
+      }
+      return pattern.join('');
+    }
+    return false;
+  },
   _fn: {
-    comments: function (options) {
+    comments: function (m,options) {
       var options = $.extend({},options);
       var pattern = /^[\s+]+\/\*[\S\s]*?\*\/(\s+|)[\n]+|^[\s+]+\/\/[\S\s]*?$/gm;
-      options.template = options.template.replace(pattern,'');
+      return m.replace(pattern,'');
       return options;
     },
-    ifmatch: function (options) {
-      options = $.extend({},options);
-      var pattern  = /if(\s+|)[\s\S]*?:[\s\S]*?endif/gm;
-      var data     = options.data;
+    ifmatch: function (template,options) {
+      function bool(string,data) {
+        // Match 'string'|variable <>!== 'string'|variable|number
+        var match = string.match(/([a-zA-Z0-9-% ]+)(?:[ ]+|)([!=<>]+)(?:[ ]+|)([a-zA-Z0-9-% ]+)/);
+        var left,right,condition,out;
+        if (match) { // There are conditions
+          left      = whiskers._eval(match[1],data);
+          condition = match[2];
+          right     = whiskers._eval(match[3],data);
+          if (condition === '==') out = (left == right);
+          else if (condition === '===') out = (left === right);
+          else if (condition === '!=')  out = (left != right);
+          else if (condition === '!==') out = (left !== right);
+          else if (condition === '<=')  out = (left <= right);
+          else if (condition === '>=')  out = (left >= right);
+          else if (condition === '>')   out = (left > right);
+          else if (condition === '<')   out = (left < right);
+          return out;
+        } else {
+          return (whiskers._eval(string,data)) ? true : false;
+        }
+      }
+
+      function getWholeIf(string) {
+        var pattern = whiskers._getNest('(\s+|)if(?:\\s+|)\\([\\s\\S]*?\\)',string);
+        var _pattern = pattern;
+        while (pattern) {
+          pattern = whiskers._getNest(pattern+'(?:\\s+|)else',string);
+          if (pattern) _pattern = pattern;
+        }
+        return (new RegExp(_pattern));
+      }
+
+      function group(arr) {
+        var out = arr;
+        out.splice(1,0,'(');
+        out.splice(arr.length-1,0,')');
+        out.push('((?:\\s+|)else(?:\\s+|)|)')
+        return out;
+      }
 
       function ifmatch(ternian) {
         var clean      = ternian.replace(/&amp;/g,'&').replace(/&lt;/,'<').replace(/&gt;/,'>');
@@ -177,28 +234,6 @@ var whiskers = {
         var op; // Operation type
         var eval;
 
-        function bool(string) {
-          // Match 'string'|variable <>!== 'string'|variable|number
-          var match = string.match(/([a-zA-Z0-9-% ]+)(?:[ ]+|)([!=<>]+)(?:[ ]+|)([a-zA-Z0-9-% ]+)/);
-          var left,right,condition,out;
-          if (match) { // There are conditions
-            left      = whiskers._eval(match[1],data);
-            condition = match[2];
-            right     = whiskers._eval(match[3],data);
-            if (condition === '==') out = (left == right);
-            else if (condition === '===') out = (left === right);
-            else if (condition === '!=')  out = (left != right);
-            else if (condition === '!==') out = (left !== right);
-            else if (condition === '<=')  out = (left <= right);
-            else if (condition === '>=')  out = (left >= right);
-            else if (condition === '>')   out = (left > right);
-            else if (condition === '<')   out = (left < right);
-            return out;
-          } else {
-            return (whiskers._eval(ternian,data)) ? true : false;
-          }
-        }
-
         if (clean.match(/&/)) {
           op = 'and';
         } else if (clean.match(/\|\|/)) {
@@ -206,7 +241,7 @@ var whiskers = {
         }
 
         for (var i=0;i<compare.length;i++) {
-          boolReturn = bool(compare[i]);
+          boolReturn = bool(compare[i],options.data);
           if (op === 'or' && boolReturn === true) {
             i=compare.length;
           } else if (op === 'and' && boolReturn === false) {
@@ -216,45 +251,66 @@ var whiskers = {
         return boolReturn;
       }
 
-      function execute() {
-        var boolGroup,left,condition,right,bool,content,ifgroup;
+      function getIf(string) {
+        var ifStatement = 'if(?:\\s+|)\\(([\\s\\S]*?)\\)(?:\\s+|)(?:\\{)';
+        var pattern = [ifStatement,'[\\s\\S]*?','(?:})'];
+        var ifMatch = string.match((new RegExp(pattern.join(''))));
+        var finalPattern;
+        function group(arr) {
+          var out = arr;
+          out.splice(1,0,'(');
+          out.splice(arr.length-1,0,')');
+          out.push('(?:(?:\\s+|)else(?:\\s+|)|)')
+          return out;
+        }
+        while (ifMatch[0].match(/\{/g).length > ifMatch[0].match(/\}/g).length) {
+          pattern.push('[\\s\\S]*?','(?:})');
+          ifMatch = string.match(pattern.join(''));
+        }
+        finalPattern = group(pattern).join('');
+        return [string.match(finalPattern),getWholeIf(string),(new RegExp(finalPattern))];
+      }
 
-        options.template = options.template.replace(pattern,function (m) {
-          var ifPattern      = /if(?:\s+|)([\S\s]*?):(?:\s+|)([\S\s]*?)(?:\s+|)(endif|else)/m;
-          var elsePattern    = /^(?:[\s+ ]+|):(?:\s+|)([\s\S]*?)(?:\s+|)(endif)/m;
-          var contentPattern = /(.*?)(else|endif)/;
-          var ifgroup        = m.match(ifPattern);
-          var elsegroup      = m.match(elsePattern);
-          var condition,content;
+      function ifProcess(string) {
+        var out = string;
 
-
-          while (ifgroup) {
-            ifgroup   = m.match(ifPattern);
-            elsegroup = m.match(elsePattern);
-            // if Statement
-            if (ifgroup) {
-              condition = ifmatch(ifgroup[1]);
-              content   = ifgroup[2];
-            } else {
-              if (elsegroup) {
-                condition = true;
-                content   = elsegroup[1];
+        function doIf () {
+          var _ifmatch   = string.match(/if(\s+|)\([\S\s]*?\)/);
+          var _elsematch = string.match(/\{([\S\s]*?)}/);
+          if (_ifmatch) {
+            var get = getIf(string);
+            if (get[0]) {
+              if (ifmatch(get[0][1])) {
+                string = string.replace(get[1],get[0][2]);
+              } else {
+                string = string.replace(get[2],'');
+                doIf();
               }
             }
-            if (condition) {
-              return content;
-            }
-            m = m.replace(ifPattern,'');
+          } else if (_elsematch) {
+            string = _elsematch[1];
           }
-          return '';
-        });
+        }
+
+        doIf();
+
+        // Return result after the loop is run
+        return string;
       }
 
-      if (options.template.match(pattern)) {
-        execute();
+      function execute() {
+        while (template.match(/(\s+|)if(\s+|)\([\s\S]*?\)/)) {
+          template = template.replace(getWholeIf(template),function (m) {
+            return ifProcess(m);
+          });
+        }
       }
 
-      return options;
+      options = $.extend({},options);
+
+      execute();
+
+      return template;
     },
     insert: function (options) {
       var data = options.data;
@@ -315,10 +371,10 @@ var whiskers = {
     },
     clean: function (options) {
       options = $.extend({},options);
-      var pattern = /\{:([\S\s]*?):\}/gm;
+      var pattern = /~\\!([\S\s]*?):\}/gm;
       var match;
       options.template = options.template.replace(pattern,function (m) {
-        match = m.match(/\{:([\S\s]*?):\}/);
+        match = m.match(/~\\!([\S\s]*?):\}/);
         if (match) {
           return match[1];
         } else {
@@ -329,14 +385,15 @@ var whiskers = {
     }
   }, /* FN */
   it: function (options) {
-    var pattern  = new RegExp('(?:\\s+|){:[\\S\\s]*?:}','gm');
-    if (options.template.match(pattern) || options.inside) {
-      options = whiskers._fn['comments'](options);
-      options = whiskers._fn['ifmatch'](options);
-      options = whiskers._fn['insert'](options);
-      options = whiskers._fn['get'](options);
-      options = whiskers._fn['clean'](options);
-    }
+    var pattern  = new RegExp('(?:\\s+|)~![\\S\\s]*?~!','gm');
+    options.template = options.template.replace(/~![\s\S]*?~!/g,function (m) {
+      m = whiskers._fn['comments'](m,options);
+      m = whiskers._fn['ifmatch'](m,options);
+      //m = whiskers._fn['insert'](m,options);
+      //options = whiskers._fn['get'](options);
+      //options = whiskers._fn['clean'](options);
+      return m;
+    });
 
     return options;
   },
@@ -395,6 +452,7 @@ var whiskers = {
 
     load(templates,0,function () {
       template = whiskers.it({template:template,data:data}).template;
+      console.log(template);
       if ($('.whiskers-container').size() < 1) {
         container = $('<div class="whiskers-container"></div>');
         $('body').append(container);
