@@ -1,3 +1,10 @@
 [data-whiskers] {
   display: none;
 }
+
+.whiskers-error {
+  color: #a10043;
+  font-size: 15px;
+  display: block;
+  padding: 10px;
+}
