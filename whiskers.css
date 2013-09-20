@@ -8,3 +8,8 @@
   display: block;
   padding: 10px;
 }
+
+.whiskers-error_title {
+  display: block;
+  font-size: 12px;
+}

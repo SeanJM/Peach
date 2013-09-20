@@ -33,6 +33,22 @@ var whiskers = {
       },500);
     }
   },
+  _error: function (options) {
+    var error = {
+      template:'<span class="whiskers-error"><span class="whiskers-error_title">Error: %code</span><span class="whiskers-error_text">%text</span></span>'
+    }
+    var out = '';
+    if (options.code === 1) {
+      error.code = options.code;
+      error.text = 'The template <strong>'+options.file+'</strong> does not exists.';
+    }
+    if (whiskers.debug) {
+      out = error.template.replace(/%[a-z]+/g,function (m) {
+        return error[m.match(/%([a-z]+)/)[1]];
+      });
+    }
+    return out;
+  },
   _eval: function (string,data) {
     var stringPattern = new RegExp(whiskers._string());
     var variable      = new RegExp(whiskers._var);
@@ -97,59 +113,6 @@ var whiskers = {
 
     return false;
   },
-  _path: function (path,templateName) {
-    var out = templateName;
-    if (typeof path !== 'undefined') {
-      out = path+'_'+templateName
-    }
-    return out;
-  },
-  _getProperties: function (data,string) {
-    out          = '';
-    properties   = string.match(whiskers._match(whiskers._propAll,'g'));
-
-    if (properties) {
-      for (var i=0;i<properties.length;i++) {
-        var k          = properties[i];
-        var _propGroup = k.match(whiskers._match(whiskers._prop));
-        data[_propGroup[1]] = _propGroup[2].replace(/^[ ]+/,'');
-      }
-    }
-    return data;
-  },
-  _toObj: function (string) {
-    var obj = {};
-
-    function toProp(string,obj) {
-      var out = string.replace(/[\s]+$/,'').match(/([a-zA-Z0-9-]+)(?:\s+|):(?:\s+|)([\s\S]*?)(?=$)/);
-      obj[out[1]] = out[2];
-    }
-
-    function getNest(_string) {
-      var _obj = {};
-      var each = _string.match(/([a-zA-Z0-9-]+)(?:\s+|):(?:\s+|)([\s\S]*?)(?=;(?:\s+}|}|(?:\s+|)[a-zA-Z0-9-]+(?:\s|):(?:\s|))|})/g);
-      var nested = /([a-z]+)(?:\s+|):(?:\s+|)({[\s\S]*?}(?!,\{))/;
-      var isNested;
-      var nestedMatch;
-      for (var i=0;i<each.length;i++) {
-        isNested = each[i].match(nested);
-        if (isNested) {
-          _obj[isNested[1]] = [];
-          nestedMatch = isNested[2].match(/\{[\s\S]*?}/g);
-          for (var j=0;j<nestedMatch.length;j++) {
-            _obj[isNested[1]].push(getNest(nestedMatch[j]));
-          }
-        }
-        else {
-          toProp(each[i],_obj);
-        }
-      }
-      return _obj;
-    }
-
-    obj = getNest(string);
-    return obj;
-  },
   _get: function (options) {
     var _options = whiskers.options($.extend(options,{}));
     var out;
@@ -198,7 +161,7 @@ var whiskers = {
     return out.template;
   },
   _getNest: function (pattern,string) {
-    pattern = [pattern,'(?:\\s+|)\\{','[\\s\\S]*?','}'];
+    pattern   = [pattern,'(?:\\s+|)\\{','[\\s\\S]*?','}'];
     var match = string.match(pattern.join(''));
     if (match) {
       while (match[0].match(/\{/g).length > match[0].match(/\}/g).length) {
@@ -210,9 +173,6 @@ var whiskers = {
       return pattern.join('');
     }
     return false;
-  },
-  _getNestContents: function (pattern,string) {
-    return string;
   },
   _stringToObject: function (string) {
     var property;
@@ -226,6 +186,14 @@ var whiskers = {
       });
     }
     return obj;
+  },
+  _toTemplateFile: function (files) {
+    var arr = [];
+    var fileName  = './templates/%file.html';
+    for (var i=0;i<files.length;i++) {
+      arr.push(fileName.replace('%file',files[i]));
+    }
+    return arr;
   },
   script: {
     comments: function (options) {
@@ -378,12 +346,9 @@ var whiskers = {
       return options;
     },
     get: function (options) {
-      var iterator;
-      var pattern;
-
       function getArrayNest(string) {
         var pattern = ['\\[','[\\s\\S]*?','\\]'];
-        var match = string.match(pattern.join(''));
+        var match   = string.match(pattern.join(''));
         while (match && match[0].match(/\[/g).length !== match[0].match(/\]/g).length) {
           pattern.push('[\\s\\S]*?','\\]');
           match = string.match(pattern.join(''));
@@ -395,7 +360,7 @@ var whiskers = {
 
       function stringToArray(properties) {
         function toArray(string) {
-          var arr = [];
+          var arr                = [];
           var getArrayNestResult = getArrayNest(string);
           // Get array 'nest'
           while (string.match(getArrayNestResult.pattern)) {
@@ -411,8 +376,7 @@ var whiskers = {
         function isArray(string) {
           if (string.match(/\[[\S\s]*?\]/)) {
             return true;
-          }
-          return false;
+          } return false;
         }
 
         for (var k in properties) {
@@ -427,7 +391,7 @@ var whiskers = {
       function execute() {
         var pattern  = '(?:%([a-zA-Z0-9-]+)|)(?:`([a-zA-Z0-9-]+))';
         while (options.template.match(pattern)) {
-          var templateMatch = options.template.match(pattern);
+          var templateMatch      = options.template.match(pattern);
           var nestMatch          = templateMatch[0];
           var iterator           = templateMatch[1];
           var templateName       = templateMatch[2];
@@ -455,20 +419,6 @@ var whiskers = {
       execute();
 
       return options;
-    },
-    clean: function (options) {
-      options = $.extend({},options);
-      var pattern = /~\\!([\S\s]*?):\}/gm;
-      var match;
-      options.template = options.template.replace(pattern,function (m) {
-        match = m.match(/~\\!([\S\s]*?):\}/);
-        if (match) {
-          return match[1];
-        } else {
-          return m;
-        }
-      });
-      return options;
     }
   }, /* FN */
   it: function (options) {
@@ -476,7 +426,6 @@ var whiskers = {
     whiskers.script['ifmatch'](options);
     whiskers.script['insert'](options);
     whiskers.script['get'](options);
-
     return options;
   },
   setTime: function (timeStart) {
@@ -494,56 +443,67 @@ var whiskers = {
   },
   init:function (data,callback) {
     var whisker           = $('div[data-whiskers]');
-    var whiskerAttr       = whisker.attr('data-whiskers');
-    var templates         = whiskers._clear(whiskerAttr.match(/[ ]+templates:([\t\r\n\.\/a-zA-Z0-9_, ]+)(;|)/)[1]).replace(/ /g,'').split(',');
-    var timeStart         = new Date();
     var template          = whisker.html();
+    var whiskerAttr       = whisker.attr('data-whiskers');
+    var templates         = whiskers._toTemplateFile(whiskers._clear(whiskerAttr.match(/\s+templates:([\t\r\n\.\/a-zA-Z0-9_, ]+)(;|)/)[1]).replace(/ /g,'').split(','));
+    var timeStart         = new Date();
     var container;
-    whiskers.initTemplate = whisker.html();
+    whiskers.initTemplate = template;
     whiskers.initData     = data;
     whiskers.initCallback = callback;
     whiskers.debug        = (whiskerAttr.match(/debug(\s+|);/)) ? true : false;
     whiskers.autoRefresh  = (whiskerAttr.match(/autoRefresh(\s+|);/)) ? true : false;
 
+    console.log(templates);
+
+
     function add (file,template) {
-      while (template.match(/>(\s+|)[a-zA-Z0-9-]+/)) {
-        var templateStart = template.match(/>(?:\s+|)([a-zA-Z0-9-]+)(?:\s+|){/);
-        var match         = whiskers._getNest('>(?:\\s+|)('+templateStart[1]+')',template);
-        var templateMatch = template.match(match);
-        var name          = templateMatch[1];
-        var content       = templateMatch[2];
+      var content;
+      var match;
+      var name;
+      var pattern      = '([a-zA-Z0-9-_]+)(?:\\s+|){';
+      var templateMatch;
+      var templateStart;
+
+      while (template.match(pattern)) {
+        templateStart = template.match(pattern);
+        match         = whiskers._getNest('('+templateStart[1]+')',template);
+        templateMatch = template.match(match);
+        name          = templateMatch[1];
+        content       = templateMatch[2];
+
         whiskers.template[name] = {
           src: file,
           template: content
         }
+
         template = template.replace(new RegExp(match),function (m) {
           return '';
         });
       }
     }
 
-    function load (arr,index,callback) {
+    function load (filesArray,index,callback) {
       function execute() {
-        $('<div/>').load(arr[index],function (d,k) {
+        $('<div/>').load(filesArray[index],function (d,k) {
           if (k === 'success') {
-            add(arr[index],d);
-            load(arr,index+1,callback);
+            add(filesArray[index],d);
+            load(filesArray,index+1,callback);
           } else {
-            whiskers._throwError({code: 2,file: arr[index]});
+            $('body').append(whiskers._error({code: 1,file: filesArray[index]}));
           }
-          if ((index+1) === arr.length && typeof callback === 'function') {
+          if ((index+1) === filesArray.length && typeof callback === 'function') {
             callback();
           }
         });
       }
-      if (typeof arr[index] !== 'undefined') {
+      if (typeof filesArray[index] !== 'undefined') {
         execute();
       }
     }
 
     load(templates,0,function () {
       template = whiskers.start({template:template,data:data});
-      //template = whiskers.it({template:template,data:data}).template;
       if ($('.whiskers-container').size() < 1) {
         container = $('<div class="whiskers-container"></div>');
         $('body').append(container);
