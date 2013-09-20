@@ -35,12 +35,18 @@ var whiskers = {
   },
   _error: function (options) {
     var error = {
-      template:'<span class="whiskers-error"><span class="whiskers-error_title">Error: %code</span><span class="whiskers-error_text">%text</span></span>'
+      template:'<span class="whiskers-error"><span class="whiskers-error_title">Error: %code</span><span class="whiskers-error_text">%text</span></span>',
+      code: options.code
     }
     var out = '';
-    if (options.code === 1) {
-      error.code = options.code;
-      error.text = 'The template <strong>'+options.file+'</strong> does not exists.';
+    if (error.code === 1) {
+      error.text = 'Template file: <strong>'+options.file+'</strong> does not exists.';
+    } else if (error.code === 2) {
+      error.text = 'Template: <strong>'+options.name+'</strong> does not exist.';
+    } else if (error.code === 3) {
+      error.text = 'Variable: <strong>'+options.variable+'</strong> is undefined.';
+    } else if (error.code === 4) {
+      error.text = 'iterator: <strong>'+options.iterator+'</strong> does not exist or is not an iterator. Template: '+options.template;
     }
     if (whiskers.debug) {
       out = error.template.replace(/%[a-z]+/g,function (m) {
@@ -50,19 +56,20 @@ var whiskers = {
     return out;
   },
   _eval: function (string,data) {
+    string = string.replace(/\s+$/,'');
+
     var stringPattern = new RegExp(whiskers._string());
-    var variable      = new RegExp(whiskers._var);
+    var variable      = /(?:!|)%([a-zA-Z0-9-]+)+/;
     var isVar         = string.match(variable);
     var isInt         = string.match(/^[0-9-]+/);
-    var isString      = string.match(stringPattern);
     var out           = '';
 
     if (isVar) {
-      if (data.hasOwnProperty(isVar[6])) {
+      if (data.hasOwnProperty(isVar[1])) {
         if (isVar[0].match(/^!/)) {
           return false;
         } else {
-          return data[isVar[6]];
+          return data[isVar[1]];
         }
       } else {
         if (isVar[0].match(/^!/)) {
@@ -74,7 +81,7 @@ var whiskers = {
     } else if (isInt) {
       return string;
     } else {
-      return isString[0];
+      return string;
     }
     return out;
   },
@@ -114,12 +121,12 @@ var whiskers = {
     return false;
   },
   _get: function (options) {
-    var _options = whiskers.options($.extend(options,{}));
+    var _options    = whiskers.options($.extend(options,{}));
+    var find        = whiskers._find(_options.name);
+    var arr         = [];
+    var iterOptions = {};
     var out;
     var template;
-    var arr = [];
-    var find = whiskers._find(_options.name);
-    var iterOptions = {};
 
     function ifString_convertToObject(unknown) {
       if (typeof unknown === 'object') {
@@ -142,20 +149,18 @@ var whiskers = {
             iterOptions.data['isLast']    = (i+1 === _options.data[_options.iterator].length) ? 'true' : 'false';
             iterOptions.data['isFirst']   = (i < 1) ? 'true' : 'false';
             iterOptions.template          = _options.template;
-            console.log(iterOptions.data);
             arr.push(whiskers.it(iterOptions).template);
           }
-          console.log(arr);
           out = {template: arr.join('')};
         } else {
-          out = {template: '<span class="whiskers-error">Bad iterator: <strong>%'+_options.iterator+'</strong> (template: '+_options.name+')</span>'}
+          out = {template: whiskers._error({code: 4,iterator:_options.iterator,template: _options.name})};
         }
       } else {
         // Does not have an iterator
         out = whiskers.it(options);
       }
     } else {
-      out = {template: '<span class="whiskers-error">Template: <strong>'+_options.name+'</strong> does not exist.</span>'}
+      out = {template: whiskers._error({code: 2,name: _options.name})};
     }
     console.log(out);
     return out.template;
@@ -254,6 +259,7 @@ var whiskers = {
           op = 'or';
         }
 
+
         for (var i=0;i<compare.length;i++) {
           boolReturn = bool(compare[i],options.data);
           if (op === 'or' && boolReturn === true) {
@@ -337,7 +343,7 @@ var whiskers = {
               _out = options.data[_var];
             }
           } else {
-            _out = '<span class="whiskers-error">variable '+m+' is undefined.</span>';
+            _out = whiskers._error({code: 3,variable: m});;
           }
         }
 
@@ -362,7 +368,7 @@ var whiskers = {
         function toArray(string) {
           var arr                = [];
           var getArrayNestResult = getArrayNest(string);
-          // Get array 'nest'
+
           while (string.match(getArrayNestResult.pattern)) {
             getArrayNestResult = getArrayNest(string);
             arr.push(getArrayNestResult.content);
@@ -370,9 +376,10 @@ var whiskers = {
               return '';
             });
           }
+
           return arr;
         }
-        // Check to see if value of property is an array
+
         function isArray(string) {
           if (string.match(/\[[\S\s]*?\]/)) {
             return true;
@@ -407,7 +414,6 @@ var whiskers = {
             templateNest = pattern;
           }
 
-
           $.extend(templateProperties,options.data);
 
           options.template = options.template.replace(new RegExp(templateNest),function (m) {
@@ -434,11 +440,9 @@ var whiskers = {
   },
   start: function (options) {
     var _options = $.extend(options,{});
-    var tmp;
     return options.template.replace(/~![\s\S]*?!~/g,function (m) {
       _options.template = m.match(/~!([\s\S]*?)!~/)[1];
-      tmp = whiskers.it(_options).template.replace();
-      return tmp;
+      return whiskers.it(_options).template.replace();
     });
   },
   init:function (data,callback) {
@@ -453,9 +457,6 @@ var whiskers = {
     whiskers.initCallback = callback;
     whiskers.debug        = (whiskerAttr.match(/debug(\s+|);/)) ? true : false;
     whiskers.autoRefresh  = (whiskerAttr.match(/autoRefresh(\s+|);/)) ? true : false;
-
-    console.log(templates);
-
 
     function add (file,template) {
       var content;
