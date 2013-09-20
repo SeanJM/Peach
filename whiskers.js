@@ -127,9 +127,6 @@ var whiskers = {
 
     function getNest(_string) {
       var _obj = {};
-      //var each = _string.match(/[a-zA-Z0-9-]+(\s+|):(\s+|)(\{[\S\s]*?}|[\S\s]*?)(;(?!}|(\s+)}|[\s\S]*?}(;))|$)/g);
-      // New Pattern: ([a-zA-Z0-9-]+)(?:\s+|):(?:\s+|)([\s\S]*?)(?=;(?:\s+}|}|(?:\s+|)[a-zA-Z0-9-]+(?:\s|):(?:\s|))|})
-      //var each = _string.match(/[a-zA-Z0-9-]+(\s+|):(\s+|)(\{[\S\s]*?|[\S\s]*?)(;|$)/g);
       var each = _string.match(/([a-zA-Z0-9-]+)(?:\s+|):(?:\s+|)([\s\S]*?)(?=;(?:\s+}|}|(?:\s+|)[a-zA-Z0-9-]+(?:\s|):(?:\s|))|})/g);
       var nested = /([a-z]+)(?:\s+|):(?:\s+|)({[\s\S]*?}(?!,\{))/;
       var isNested;
@@ -417,32 +414,35 @@ var whiskers = {
           }
           return false;
         }
+
         for (var k in properties) {
           if (isArray(properties[k])) {
             properties[k] = toArray(properties[k]);
           }
         }
         return properties;
+
       }
 
       function execute() {
         var pattern  = '(?:%([a-zA-Z0-9-]+)|)(?:`([a-zA-Z0-9-]+))';
-        var i=3;
-        while (options.template.match(pattern) && i>1) {
-          i--;
-          var iterator           = options.template.match(pattern)[1];
-          var templateName       = options.template.match(pattern)[2];
-          var templateNest       = whiskers._getNest('('+pattern+')',options.template);
+        while (options.template.match(pattern)) {
+          var templateMatch = options.template.match(pattern);
+          var nestMatch          = templateMatch[0];
+          var iterator           = templateMatch[1];
+          var templateName       = templateMatch[2];
+          var templateNest       = whiskers._getNest('('+nestMatch+')',options.template);
           var templateProperties = {};
           var templateNestInside;
 
           if (templateNest) {
-            templateNestInside = options.template.match(templateNest)[4];
+            templateNestInside = options.template.match(templateNest)[2];
             templateProperties = whiskers._stringToObject(templateNestInside);
             templateProperties = stringToArray(templateProperties);
           } else {
             templateNest = pattern;
           }
+
 
           $.extend(templateProperties,options.data);
 
