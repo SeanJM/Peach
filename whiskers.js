@@ -56,13 +56,8 @@ var whiskers = {
     return out;
   },
   _eval: function (string,data) {
-    string = string.replace(/\s+$/,'');
-
-    var stringPattern = new RegExp(whiskers._string());
-    var variable      = /(?:!|)%([a-zA-Z0-9-]+)+/;
-    var isVar         = string.match(variable);
-    var isInt         = string.match(/^[0-9-]+/);
-    var out           = '';
+    string    = string.replace(/\s+$/,'');
+    var isVar = string.match(/(?:!|)%([a-zA-Z0-9-]+)+/);
 
     if (isVar) {
       if (data.hasOwnProperty(isVar[1])) {
@@ -78,12 +73,10 @@ var whiskers = {
           return false;
         }
       }
-    } else if (isInt) {
-      return string;
     } else {
       return string;
     }
-    return out;
+    return '';
   },
   _clear: function (string) {
     return string.replace(/(\r\n|\n|\r)/gm,'');
@@ -120,14 +113,10 @@ var whiskers = {
 
     return false;
   },
-  _get: function (options) {
-    var _options    = whiskers.options($.extend(options,{}));
-    var find        = whiskers._find(_options.name);
-    var arr         = [];
+  _iterate: function (options) {
     var iterOptions = {};
+    var arr         = [];
     var out;
-    var template;
-
     function ifString_convertToObject(unknown) {
       if (typeof unknown === 'object') {
         return unknown;
@@ -135,34 +124,41 @@ var whiskers = {
         return whiskers._stringToObject(unknown);
       }
     }
+    if (options.iterator && typeof options.iterator !== 'undefined') {
+      if (options.data.hasOwnProperty(options.iterator)) {
+        for (var i=0;i<options.data[options.iterator].length;i++) {
+          iterOptions.name              = options.name;
+          iterOptions.data              = ifString_convertToObject(options.data[options.iterator][i]);
+          iterOptions.data['index']     = (i+1);
+          iterOptions.data['oddOrEven'] = (i%2 === 0) ? 'odd' : 'even';
+          iterOptions.data['isLast']    = (i+1 === options.data[options.iterator].length) ? 'true' : 'false';
+          iterOptions.data['isFirst']   = (i < 1) ? 'true' : 'false';
+          iterOptions.template          = options.template;
+          arr.push(whiskers.it(iterOptions).template);
+        }
+        out = {template: arr.join('')};
+      } else {
+        out = {template: whiskers._error({code: 4,iterator:options.iterator,template: options.name})};
+      }
+    } else {
+      // Does not have an iterator
+      out = whiskers.it(options);
+    }
+    return out;
+  },
+  _get: function (options) {
+    var _options    = whiskers.options($.extend(options,{}));
+    var find        = whiskers._find(_options.name);
+    var out;
+    var template;
 
     if (find) {
       _options.template = find.template;
       // Has an iterator
-      if (_options.iterator && typeof _options.iterator !== 'undefined') {
-        if (_options.data.hasOwnProperty(_options.iterator)) {
-          for (var i=0;i<_options.data[_options.iterator].length;i++) {
-            iterOptions.name              = _options.name;
-            iterOptions.data              = ifString_convertToObject(_options.data[_options.iterator][i]);
-            iterOptions.data['index']     = (i+1);
-            iterOptions.data['oddOrEven'] = (i%2 === 0) ? 'odd' : 'even';
-            iterOptions.data['isLast']    = (i+1 === _options.data[_options.iterator].length) ? 'true' : 'false';
-            iterOptions.data['isFirst']   = (i < 1) ? 'true' : 'false';
-            iterOptions.template          = _options.template;
-            arr.push(whiskers.it(iterOptions).template);
-          }
-          out = {template: arr.join('')};
-        } else {
-          out = {template: whiskers._error({code: 4,iterator:_options.iterator,template: _options.name})};
-        }
-      } else {
-        // Does not have an iterator
-        out = whiskers.it(options);
-      }
+      out = whiskers._iterate(_options);
     } else {
       out = {template: whiskers._error({code: 2,name: _options.name})};
     }
-    console.log(out);
     return out.template;
   },
   _getNest: function (pattern,string) {
@@ -409,6 +405,7 @@ var whiskers = {
           if (templateNest) {
             templateNestInside = options.template.match(templateNest)[2];
             templateProperties = whiskers._stringToObject(templateNestInside);
+            console.log(templateProperties);
             templateProperties = stringToArray(templateProperties);
           } else {
             templateNest = pattern;
