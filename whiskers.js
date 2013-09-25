@@ -418,22 +418,23 @@ var whiskers = {
       return options;
     },
     insert: function (options) {
-      var pattern = '(\\(|)%([a-zA-Z0-9-]+)(\\)|)(?:(?:\\.)([a-zA-Z0-9\\[\\]\'\"\(\)]+(?:=>([a-zA-Z0-9_]+)|=&gt;([a-zA-Z0-9_]+)|))|)';
+      var pattern = '%([a-zA-Z0-9-]+)(?:\\|\\{([\\s\\S]*?)\\}|)(?:(?:\\.)([a-zA-Z0-9\\[\\]\'\"\(\)]+(?:=>([a-zA-Z0-9_]+)|=&gt;([a-zA-Z0-9_]+)|))|)';
       options.template = options.template.replace(new RegExp(pattern,'g'),function (m) {
-        var _out        = m;
-        var _match      = m.match(pattern);
-        var _var        = _match[2];
-        var _prop       = _match[4];
-        var _isIterator = (_match[1].length > 0);
+        var _out   = m;
+        var _match = m.match(pattern);
+        var _var   = _match[1];
+        var _alt   = _match[2];
+        var _prop  = _match[3];
         var string;
-
-        if (options.data.hasOwnProperty(_var)) {
+        if (options.data.hasOwnProperty(_var) && options.data[_var].length > 0) {
           string = options.data[_var].replace(/^\s+|\s+$/,'');
           if (typeof _prop === 'string') {
             _out = whiskers._toProp(string,_prop);
           } else {
             _out = string;
           }
+        } else if (typeof _alt === 'string') {
+          _out = _alt;
         } else {
           _out = whiskers._error({code: 3,variable: m,name: options.name});
         }
