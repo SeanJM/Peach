@@ -7,9 +7,13 @@
   font-size: 15px;
   display: block;
   padding: 10px;
+  line-height: 20px;
 }
 
 .whiskers-error_title {
   display: block;
   font-size: 12px;
+}
+
+.whiskers-container {
 }
