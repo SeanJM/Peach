@@ -44,7 +44,7 @@ var whiskers = {
     } else if (error.code === 2) {
       error.text = 'Template: <strong>'+options.name+'</strong> does not exist.';
     } else if (error.code === 3) {
-      error.text = 'Template: '+whiskers.find(options.name).src+' : '+options.name+'<br/>Variable: <strong>'+options.variable+'</strong> is undefined.';
+      error.text = 'Template: '+whiskers.js.find(options.name).src+' : '+options.name+'<br/>Variable: <strong>'+options.variable+'</strong> is undefined.';
     } else if (error.code === 4) {
       error.text = 'Unmatched Brackets: the <strong>'+options.name+'</strong> template has a bad nest.';
     } else if (error.code === 5) {
@@ -89,29 +89,29 @@ var whiskers = {
     } else r = b;
     return r;
   },
-  find: function (string) {
-    var options = {};
-    var template;
-    var val;
+  js: {
+    find: function (string) {
+      var options = {};
+      var template;
+      var val;
 
-    if (whiskers.template.hasOwnProperty(string)) {
-      options.template = whiskers.template[string].template;
-      options.src      = whiskers.template[string].src;
+      if (whiskers.template.hasOwnProperty(string)) {
+        options.template = whiskers.template[string].template;
+        options.src      = whiskers.template[string].src;
 
-      if (whiskers.debug) {
-        options.template = '<!-- whiskers: '+options.src+' : '+string+' -->\r\n'+options.template;
+        if (whiskers.debug) {
+          options.template = '<!-- whiskers: '+options.src+' : '+string+' -->\r\n'+options.template;
+        }
+
+        return options;
       }
 
-      return options;
-    }
-
-    return false;
-  },
-  js: {
+      return false;
+    },
     iterate: function (name,data) {
       var iterData = {};
       var arr      = [];
-      var find     = whiskers.find(name);
+      var find     = whiskers.js.find(name);
       var template = find.template;
       var out;
       function ifString_convertToObject(unknown) {
@@ -139,7 +139,7 @@ var whiskers = {
       return out;
     },
     get: function (name,data) {
-      var find = whiskers.find(name);
+      var find = whiskers.js.find(name);
       if (find) {
         return whiskers.js.iterate(name,data);
       } else {
@@ -173,22 +173,6 @@ var whiskers = {
     pattern.splice(1,0,'(');
     pattern.splice(pattern.length-1,0,')');
     return {content: string.match(pattern.join(''))[1],pattern: pattern.join('')};
-  },
-  _getIteratorNest: function (options) {
-    // whiskers._getIteratorNest({start:`template,string:string,capStart:'\\[',capEnd:'\\[');
-    var pattern = [options.start,'(\\s+|)',options.capStart,'[\\s\\S]*?',options.capEnd];
-    var match   = options.string.match(pattern.join(''));
-    if (!match) {
-      return false;
-    } else {
-      while (match && match[0].match(/\[/g).length !== match[0].match(/\]/g).length) {
-        pattern.push('[\\s\\S]*?',options.capEnd);
-        match = options.string.match(pattern.join(''));
-      }
-      pattern.splice(1,0,'(');
-      pattern.splice(pattern.length-1,0,')');
-      return {content: options.string.match(pattern.join(''))[1],pattern: pattern.join('')};
-    }
   },
   _stringToJavaScript: function (string) {
     var js;
@@ -411,7 +395,6 @@ var whiskers = {
     insert: function (options) {
       var pattern = '%([a-zA-Z0-9-]+)(?:\\|\\{([\\s\\S]*?)\\}|)(?:(?:\\.)([a-zA-Z0-9\\[\\]\'\"\(\)]+(?:=>([a-zA-Z0-9_]+)|=&gt;([a-zA-Z0-9_]+)|))|)';
       options.template = options.template.replace(new RegExp(pattern,'g'),function (m) {
-        console.log(m);
         var _out   = m;
         var _match = m.match(pattern);
         var _var   = _match[1];
