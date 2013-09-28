@@ -514,28 +514,23 @@ var whiskers = {
     whiskers.autoRefresh  = (whiskerAttr.match(/autoRefresh(\s+|);/)) ? true : false;
 
     function add (file,template) {
-      var content;
-      var match;
-      var name;
-      var templateMatch;
-      var templateStart;
-      var pattern = '(?:`|)([a-zA-Z0-9-_]+)(?:\\s+|){';
+      var pattern       = '`([a-zA-Z0-9-_]+)(?:\\s+|){';
+      var templateStart = template.match(pattern);
+      var match         = whiskers._getNest('('+templateStart[1]+'){}',template);
+      var templateMatch = template.match(match);
+      var name          = templateMatch[1];
+      var content       = templateMatch[2];
 
-      while (template.match(pattern)) {
-        templateStart = template.match(pattern);
-        match         = whiskers._getNest('('+templateStart[1]+'){}',template);
-        templateMatch = template.match(match);
-        name          = templateMatch[1];
-        content       = templateMatch[2];
+      whiskers.template[name] = {
+        src: file,
+        template: content
+      }
 
-        whiskers.template[name] = {
-          src: file,
-          template: content
-        }
-
-        template = template.replace(new RegExp(match),function (m) {
-          return '';
-        });
+      template = template.replace(new RegExp(match),function (m) {
+        return '';
+      });
+      if (template.match(pattern)) {
+        add(file,template);
       }
     }
 
