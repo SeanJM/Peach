@@ -514,22 +514,23 @@ var whiskers = {
     whiskers.autoRefresh  = (whiskerAttr.match(/autoRefresh(\s+|);/)) ? true : false;
 
     function add (file,template) {
-      var pattern       = '`([a-zA-Z0-9-_]+)(?:\\s+|){';
-      var templateStart = template.match(pattern);
-      var match         = whiskers._getNest('('+templateStart[1]+'){}',template);
-      var templateMatch = template.match(match);
-      var name          = templateMatch[1];
-      var content       = templateMatch[2];
+      var match         = whiskers._getNest('`([a-zA-Z0-9-_]+){}',template);
+      if (match) {
+        var templateMatch = template.match(match);
+        var name          = templateMatch[1];
+        var content       = templateMatch[2];
 
-      whiskers.template[name] = {
-        src: file,
-        template: content
-      }
+        console.log(name);
 
-      template = template.replace(new RegExp(match),function (m) {
-        return '';
-      });
-      if (template.match(pattern)) {
+        whiskers.template[name] = {
+          src: file,
+          template: content
+        }
+
+        template = template.replace(new RegExp(match),function (m) {
+          return '';
+        });
+
         add(file,template);
       }
     }
