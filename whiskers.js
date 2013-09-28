@@ -44,7 +44,7 @@ var whiskers = {
     } else if (error.code === 2) {
       error.text = 'Template: <strong>'+options.name+'</strong> does not exist.';
     } else if (error.code === 3) {
-      error.text = 'Template: '+whiskers._find(options.name).src+' : '+options.name+'<br/>Variable: <strong>'+options.variable+'</strong> is undefined.';
+      error.text = 'Template: '+whiskers.find(options.name).src+' : '+options.name+'<br/>Variable: <strong>'+options.variable+'</strong> is undefined.';
     } else if (error.code === 4) {
       error.text = 'Unmatched Brackets: the <strong>'+options.name+'</strong> template has a bad nest.';
     } else if (error.code === 5) {
@@ -89,7 +89,7 @@ var whiskers = {
     } else r = b;
     return r;
   },
-  _find: function (string) {
+  find: function (string) {
     var options = {};
     var template;
     var val;
@@ -107,49 +107,45 @@ var whiskers = {
 
     return false;
   },
-  _iterate: function (options) {
-    var iterOptions = {};
-    var arr         = [];
-    var out;
-    function ifString_convertToObject(unknown) {
-      if (typeof unknown === 'object') {
-        return unknown;
+  js: {
+    iterate: function (name,data) {
+      var iterData = {};
+      var arr      = [];
+      var find     = whiskers.find(name);
+      var template = find.template;
+      var out;
+      function ifString_convertToObject(unknown) {
+        if (typeof unknown === 'object') {
+          return unknown;
+        } else {
+          return whiskers._stringToObject(unknown);
+        }
+      }
+      // is an Array
+      if ($.isArray(data)) {
+        for (var i=0;i<data.length;i++) {
+          iterData              = ifString_convertToObject(data[i]);
+          iterData['index']     = (i+1);
+          iterData['oddOrEven'] = (i%2 === 0) ? 'odd' : 'even';
+          iterData['isLast']    = (i+1 === data[i].length) ? 'true' : 'false';
+          iterData['isFirst']   = (i < 1) ? 'true' : 'false';
+          arr.push(whiskers.it({name: name,template: template,data: iterData}).template);
+        }
+        out = arr.join('');
       } else {
-        return whiskers._stringToObject(unknown);
+        // is an Object
+        out = whiskers.it({name: name,template: template,data: data}).template;
+      }
+      return out;
+    },
+    get: function (name,data) {
+      var find = whiskers.find(name);
+      if (find) {
+        return whiskers.js.iterate(name,data);
+      } else {
+        return whiskers._error({code: 2,name: _options.name});
       }
     }
-    // is an Array
-    if ($.isArray(options.data)) {
-      for (var i=0;i<options.data.length;i++) {
-        iterOptions.name              = options.name;
-        iterOptions.data              = ifString_convertToObject(options.data[i]);
-        iterOptions.data['index']     = (i+1);
-        iterOptions.data['oddOrEven'] = (i%2 === 0) ? 'odd' : 'even';
-        iterOptions.data['isLast']    = (i+1 === options.data[i].length) ? 'true' : 'false';
-        iterOptions.data['isFirst']   = (i < 1) ? 'true' : 'false';
-        iterOptions.template          = options.template;
-        arr.push(whiskers.it(iterOptions).template);
-      }
-      out = {template: arr.join('')};
-    } else {
-      // is an Object
-      out = whiskers.it(options);
-    }
-    return out;
-  },
-  _get: function (options) {
-    var _options    = whiskers.options($.extend(options,{}));
-    var find        = whiskers._find(_options.name);
-    var out;
-    var template;
-
-    if (find) {
-      _options.template = find.template;
-      out = whiskers._iterate(_options);
-    } else {
-      out = {template: whiskers._error({code: 2,name: _options.name})};
-    }
-    return out.template;
   },
   _getNest: function (pattern,string) {
     var start = pattern.substr(pattern.length-2,1);
@@ -464,7 +460,7 @@ var whiskers = {
           whiskers.cloneObj({source: options.data, destination: templateProperties});
 
           options.template = options.template.replace(new RegExp(templateNest),function (m) {
-            return whiskers._get({name: templateName,data: templateProperties});
+            return whiskers.js.get(templateName,templateProperties);
           });
         }
       }
