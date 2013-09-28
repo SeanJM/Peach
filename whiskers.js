@@ -159,14 +159,16 @@ var whiskers = {
     return out.template;
   },
   _getNest: function (pattern,string) {
-    pattern   = [pattern,'(?:\\s+|)\\{','[\\s\\S]*?','}'];
+    var start = pattern.substr(pattern.length-2,1);
+    var end   = pattern.substr(pattern.length-1,1);
+    pattern   = [pattern.substr(0,pattern.length-2),'(?:\\s+|)\\',start,'[\\s\\S]*?',end];
     var match = string.match(pattern.join(''));
     if (match) {
-      while (match && match[0].match(/\{/g).length > match[0].match(/\}/g).length) {
-        pattern.push('[\\s\\S]*?','}');
+      while (match && match[0].match(new RegExp('\\'+start,'g')).length > match[0].match(new RegExp(end,'g')).length) {
+        pattern.push('[\\s\\S]*?',end);
         match = string.match(pattern.join(''));
       }
-      pattern.splice(2,0,'(');
+      pattern.splice(3,0,'(');
       pattern.splice(pattern.length-1,0,')');
       return pattern.join('');
     }
@@ -207,7 +209,7 @@ var whiskers = {
       var property;
       var obj = {};
       while (string.match(/[a-zA-Z0-9-]+(\s+|)\{/)) {
-        property  = whiskers._getNest('('+string.match(/([a-zA-Z0-9-]+)(\s+|)\{/)[1]+')',string);
+        property  = whiskers._getNest('('+string.match(/([a-zA-Z0-9-]+)(\s+|)\{/)[1]+'){}',string);
         string    = string.replace(new RegExp(property),function (m) {
           match = m.match(property);
           obj[match[1]] = match[2];
@@ -317,14 +319,14 @@ var whiskers = {
         var ifPattern     = '(?:\\s+|)if(?:\\s+|)\\([\\s\\S]*?\\)';
         var elsePattern   = '(?:\\s+|)else';
         var elseIfPattern = elsePattern+ifPattern;
-        var pattern       = whiskers._getNest(ifPattern,string);
+        var pattern       = whiskers._getNest(ifPattern+'{}',string);
         var hasElse       = string.match(pattern+'(?:\\s+|)([^]{4})');
         if (hasElse && hasElse[2] === 'else') {
-          while (whiskers._getNest(pattern+elseIfPattern,string)) {
-            pattern = whiskers._getNest(pattern+elseIfPattern,string);
+          while (whiskers._getNest(pattern+elseIfPattern+'{}',string)) {
+            pattern = whiskers._getNest(pattern+elseIfPattern+'{}',string);
           }
-          if (whiskers._getNest(pattern+elsePattern,string)) {
-            pattern = whiskers._getNest(pattern+elsePattern,string);
+          if (whiskers._getNest(pattern+elsePattern+'{}',string)) {
+            pattern = whiskers._getNest(pattern+elsePattern+'{}',string);
           }
         }
         return new RegExp(pattern);
@@ -449,7 +451,7 @@ var whiskers = {
         while (options.template.match(pattern)) {
           var templateMatch      = options.template.match(pattern);
           var templateName       = templateMatch[1];
-          var templateNest       = whiskers._getNest('('+templateMatch[0]+')',options.template);
+          var templateNest       = whiskers._getNest('('+templateMatch[0]+'){}',options.template);
           var templateProperties = {};
           var nest;
 
@@ -521,7 +523,7 @@ var whiskers = {
 
       while (template.match(pattern)) {
         templateStart = template.match(pattern);
-        match         = whiskers._getNest('('+templateStart[1]+')',template);
+        match         = whiskers._getNest('('+templateStart[1]+'){}',template);
         templateMatch = template.match(match);
         name          = templateMatch[1];
         content       = templateMatch[2];
