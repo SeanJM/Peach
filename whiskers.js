@@ -422,6 +422,7 @@ var whiskers = {
     insert: function (options) {
       var pattern = '%([a-zA-Z0-9-]+)(?:\\|\\{([\\s\\S]*?)\\}|)(?:(?:\\.)([a-zA-Z0-9\\[\\]\'\"\(\)]+(?:=>([a-zA-Z0-9_]+)|=&gt;([a-zA-Z0-9_]+)|))|)';
       options.template = options.template.replace(new RegExp(pattern,'g'),function (m) {
+        console.log(m);
         var _out   = m;
         var _match = m.match(pattern);
         var _var   = _match[1];
@@ -446,7 +447,7 @@ var whiskers = {
     },
     get: function (options) {
       function execute() {
-        var pattern      = '(?:`([a-zA-Z0-9-]+))';
+        var pattern      = '(?:`([a-zA-Z0-9-_]+))';
 
         while (options.template.match(pattern)) {
           var templateMatch      = options.template.match(pattern);
@@ -519,8 +520,6 @@ var whiskers = {
         var templateMatch = template.match(match);
         var name          = templateMatch[1];
         var content       = templateMatch[2];
-
-        console.log(name);
 
         whiskers.template[name] = {
           src: file,
