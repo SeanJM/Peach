@@ -26,18 +26,11 @@ var whiskers = {
 
     return object;
   },
-  _cloneObj: function (object) {
+  cloneObj: function (object) {
     for (k in object.destination) {
       object.source[k] = object.destination[k];
     }
     return object;
-  },
-  _autoRefresh: function (object) {
-    if (whiskers.autoRefresh) {
-      setTimeout(function () {
-        whiskers.init(whiskers.initData,whiskers.initCallback);
-      },500);
-    }
   },
   _fn: {},
   _error: function (options) {
@@ -447,7 +440,7 @@ var whiskers = {
     },
     get: function (options) {
       function execute() {
-        var pattern      = '(?:`([a-zA-Z0-9-_]+))';
+        var pattern      = '`([a-zA-Z0-9-_]+)';
 
         while (options.template.match(pattern)) {
           var templateMatch      = options.template.match(pattern);
@@ -468,7 +461,7 @@ var whiskers = {
             templateNest = pattern;
           }
 
-          whiskers._cloneObj({source: options.data, destination: templateProperties});
+          whiskers.cloneObj({source: options.data, destination: templateProperties});
 
           options.template = options.template.replace(new RegExp(templateNest),function (m) {
             return whiskers._get({name: templateName,data: templateProperties});
@@ -561,7 +554,6 @@ var whiskers = {
       }
       $('.whiskers-container').html(template);
       whiskers.setTime(timeStart);
-      whiskers._autoRefresh();
       if (typeof callback === 'function') {
         callback();
       }
