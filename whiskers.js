@@ -316,8 +316,8 @@ var whiskers = {
       }
 
       function getWholeIf(string) {
-        var ifPattern     = '(?:\\s+|)if(?:\\s+|)\\([\\s\\S]*?\\)';
-        var elsePattern   = '(?:\\s+|)else';
+        var ifPattern     = 'if(?:\\s+|)\\([\\s\\S]*?\\)';
+        var elsePattern   = 'else';
         var elseIfPattern = elsePattern+ifPattern;
         var pattern       = whiskers._getNest(ifPattern+'{}',string);
         var hasElse       = string.match(pattern+'(?:\\s+|)([^]{4})');
