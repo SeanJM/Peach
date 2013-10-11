@@ -1,8 +1,8 @@
-[data-whiskers] {
+[data-peach] {
   display: none;
 }
 
-.whiskers-error {
+.peach-error {
   color: #a10043;
   font-size: 15px;
   display: block;
@@ -10,10 +10,10 @@
   line-height: 20px;
 }
 
-.whiskers-error_title {
+.peach-error_title {
   display: block;
   font-size: 12px;
 }
 
-.whiskers-container {
+.peach-container {
 }
