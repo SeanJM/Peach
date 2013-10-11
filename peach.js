@@ -95,7 +95,7 @@ var peach = {
       options.src      = peach.template[name].src;
 
       if (peach.debug) {
-        options.template = '<!-- peach: '+options.src+' : '+name+' -->\r\n'+options.template;
+        //options.template = '<!-- peach: '+options.src+' : '+name+' -->\r\n'+options.template;
       }
 
       return options;
@@ -281,17 +281,23 @@ var peach = {
         }
       }
 
+      function hasElse(string,pattern) {
+        var hasElse = string.match(pattern+'(?:\\s+|)([a-zA-Z]{4}|)')[2];
+        if (hasElse == 'else') {
+          return true;
+        } else {
+          return false;
+        }
+      }
+
       function getWholeIf(string) {
-        var ifPattern     = 'if(?:\\s+|)\\([\\s\\S]*?\\)';
-        var elseIfPattern = 'else'+ifPattern;
-        var pattern       = peach._getNest(ifPattern+'{}',string);
-        var hasElse       = string.match(pattern+'(?:\\s+|)else');
-        if (hasElse) {
-          while (peach._getNest(pattern+elseIfPattern+'{}',string)) {
-            pattern = peach._getNest(pattern+elseIfPattern+'{}',string);
+        var pattern       = peach._getNest('if(?:\\s+|)\\([\\s\\S]*?\\){}',string);
+        if (hasElse(string,pattern)) {
+          while (peach._getNest(pattern+'else if(?:\\s+|)\\([\\s\\S]*?\\){}',string)) {
+            pattern = peach._getNest(pattern+'else if(?:\\s+|)\\([\\s\\S]*?\\){}',string);
           }
-          if (peach._getNest(pattern+'(?:\\s+|)else{}',string)) {
-            pattern = peach._getNest(pattern+'(?:\\s+|)else{}',string);
+          if (peach._getNest(pattern+'(?:\\s+|)(else){}',string)) {
+            pattern = peach._getNest(pattern+'(?:\\s+|)(else){}',string);
           }
         }
         return new RegExp(pattern);
@@ -331,7 +337,7 @@ var peach = {
 
       function getIf(string) {
         var _if = peach._getNest('^if(?:\\s+|)\\(([\\s\\S]*?)\\){}',string);
-        if (_if) { _if += '(\\s+|)(else(\\s+|)|)'; }
+        if (_if) { _if += '((\\s+|)else(\\s+|)|)'; }
         return _if;
       }
 
@@ -341,7 +347,6 @@ var peach = {
           1. Process if statement -- if true, replace entire string with contents
           2. If statement is false, remove it and a possible 'else' and reprocess
         */
-        string = string.replace(/^\s+|\s+$/g,'');
         function doIf () {
           var _if        = getIf(string);
           var _ifmatch   = string.match(_if);
@@ -357,6 +362,8 @@ var peach = {
             }
           } else if (_else) {
             string = _elsematch[1];
+          } else {
+            string = "";
           }
         }
         doIf();
@@ -366,6 +373,7 @@ var peach = {
       function execute() {
         while (options.template.match(/if(\s+|)\([\s\S]*?\)/)) {
           options.template = options.template.replace(getWholeIf(options.template),function (m) {
+            //console.log(m);
             return ifProcess(m);
           });
         }
