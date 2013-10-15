@@ -93,10 +93,7 @@ var peach = {
     if (peach.template.hasOwnProperty(name)) {
       options.template = peach.template[name].template;
       options.src      = peach.template[name].src;
-
-      if (peach.debug) {
-        //options.template = '<!-- peach: '+options.src+' : '+name+' -->\r\n'+options.template;
-      }
+      options.file     = peach.template[name].src.split('/')[peach.template[name].src.split('/').length-1];
 
       return options;
     }
@@ -129,9 +126,9 @@ var peach = {
       if ($.isArray(data)) {
         for (var i=0;i<data.length;i++) {
           iterData              = ifString_convertToObject(data[i]);
-          iterData['index']     = (i+1);
+          iterData['index']     = (i+1).toString();
           iterData['oddOrEven'] = (i%2 === 0) ? 'odd' : 'even';
-          iterData['isLast']    = (i+1 === data[i].length) ? 'true' : 'false';
+          iterData['isLast']    = (i+1 === data.length) ? 'true' : 'false';
           iterData['isFirst']   = (i < 1) ? 'true' : 'false';
           arr.push(peach.it({name: name,template: template,data: iterData}).template);
         }
@@ -373,7 +370,6 @@ var peach = {
       function execute() {
         while (options.template.match(/if(\s+|)\([\s\S]*?\)/)) {
           options.template = options.template.replace(getWholeIf(options.template),function (m) {
-            //console.log(m);
             return ifProcess(m);
           });
         }
@@ -410,6 +406,19 @@ var peach = {
       return options;
     },
     get: function (options) {
+      function getValue(templateName,templateProperties) {
+        if (peach.debug) {
+          var tf = peach.find(templateName).file;
+          if (tf) {
+            var tn_spacer = (new Array(26-templateName.length)).join(' ');
+            var tf_spacer = (new Array(16-tf.length)).join(' ');
+            var string = tf+tf_spacer+': '+templateName+tn_spacer;
+            return '<!-- {Peach} '+string+'-->'+peach.get(templateName,templateProperties);
+          }
+        } else {
+          return peach.get(templateName,templateProperties);
+        }
+      }
       function execute() {
         var pattern      = '`([a-zA-Z0-9-_]+)';
 
@@ -435,7 +444,7 @@ var peach = {
           peach.cloneObj({source: options.data, destination: templateProperties});
 
           options.template = options.template.replace(new RegExp(templateNest),function (m) {
-            return peach.get(templateName,templateProperties);
+            return getValue(templateName,templateProperties);
           });
         }
       }
