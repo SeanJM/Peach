@@ -102,8 +102,14 @@ var peach = {
   },
   get: function (name,data) {
     var find = peach.find(name);
+    var comment = '';
     if (find) {
-      return peach.js.iterate(name,data);
+      if (peach.debug) {
+        var tn_spacer = (new Array(26-name.length)).join(' ');
+        var tf_spacer = (new Array(16-find.file.length)).join(' ');
+        var comment   = '<!-- {Peach} '+find.file+tf_spacer+': '+name+tn_spacer+'-->\n';
+      }
+      return comment+peach.js.iterate(name,data);
     } else {
       return peach._error({code: 2,name: name});
     }
@@ -155,17 +161,6 @@ var peach = {
     }
     return false;
   },
-  _getArrayNest: function (string) {
-    var pattern = ['\\[','[\\s\\S]*?','\\]'];
-    var match   = string.match(pattern.join(''));
-    while (match && match[0].match(/\[/g).length !== match[0].match(/\]/g).length) {
-      pattern.push('[\\s\\S]*?','\\]');
-      match = string.match(pattern.join(''));
-    }
-    pattern.splice(1,0,'(');
-    pattern.splice(pattern.length-1,0,')');
-    return {content: string.match(pattern.join(''))[1],pattern: pattern.join('')};
-  },
   _stringToJavaScript: function (string) {
     var js;
 
@@ -194,18 +189,18 @@ var peach = {
       string = string.replace(/^\s+|\s+$/g,'');
       if (string.match(/^\[[\S\s]*?\]$/m)) {
         return true;
-      } return false;
+      } else {
+        return false;
+      }
     }
 
     function toArray(string) {
-      var arr                = [];
-      var getArrayNestResult = peach._getArrayNest(string);
-      while (string.match(getArrayNestResult.pattern)) {
-        getArrayNestResult = peach._getArrayNest(string);
-        arr.push(toObject(getArrayNestResult.content));
-        string = string.replace(new RegExp(getArrayNestResult.pattern),function (m) {
-          return '';
-        });
+      var arr  = [];
+      var nest = peach._getNest('^[]',string);
+      while (string.match(/^\[/)) {
+        nest = peach._getNest('^[]',string);
+        arr.push(peach._stringToJavaScript(string.match(nest)[1]));
+        string = string.replace(new RegExp(nest),'');
       }
       return arr;
     }
@@ -228,6 +223,9 @@ var peach = {
         },
         length: function () {
           return unknown.length;
+        },
+        toDash: function () {
+          return unknown.toLowerCase().replace(/\s+/g,'-');
         }
       }
     }
@@ -406,21 +404,8 @@ var peach = {
       return options;
     },
     get: function (options) {
-      function getValue(templateName,templateProperties) {
-        if (peach.debug) {
-          var tf = peach.find(templateName).file;
-          if (tf) {
-            var tn_spacer = (new Array(26-templateName.length)).join(' ');
-            var tf_spacer = (new Array(16-tf.length)).join(' ');
-            var string = tf+tf_spacer+': '+templateName+tn_spacer;
-            return '<!-- {Peach} '+string+'-->'+peach.get(templateName,templateProperties);
-          }
-        } else {
-          return peach.get(templateName,templateProperties);
-        }
-      }
       function execute() {
-        var pattern      = '`([a-zA-Z0-9-_]+)';
+        var pattern = '`([a-zA-Z0-9-_]+)';
 
         while (options.template.match(pattern)) {
           var templateMatch      = options.template.match(pattern);
@@ -428,6 +413,7 @@ var peach = {
           var templateNest       = peach._getNest('('+templateMatch[0]+'){}',options.template);
           var templateProperties = {};
           var nest;
+
 
           if (templateNest) {
             nest = options.template.match(templateNest);
@@ -444,7 +430,7 @@ var peach = {
           peach.cloneObj({source: options.data, destination: templateProperties});
 
           options.template = options.template.replace(new RegExp(templateNest),function (m) {
-            return getValue(templateName,templateProperties);
+            return peach.get(templateName,templateProperties);
           });
         }
       }
@@ -486,8 +472,8 @@ var peach = {
     });
   },
   init:function (data,options) {
-    var defaults          = {directory: 'templates'};
-    var peachData         = $('div[data-peach]');
+    var defaults          = {directory: 'templates/'};
+    var peachData         = $('div[data-peach]'); // Check to see if the data-peach is present, if not, throw an error
     var template          = peachData.html();
     var peachAttr         = peachData.attr('data-peach');
     var directory         = options.directory||defaults.directory;
