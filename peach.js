@@ -53,28 +53,47 @@ var peach = {
     }
     return out;
   },
-  _eval: function (string,data) {
-    string    = string.replace(/\s+$/,'');
-    var isVar = string.match(/(?:!|)%([a-zA-Z0-9-]+)+/);
-
-    if (isVar) {
-      if (data.hasOwnProperty(isVar[1])) {
-        if (isVar[0].match(/^!/)) {
-          return false;
-        } else {
-          return data[isVar[1]];
-        }
-      } else {
-        if (isVar[0].match(/^!/)) {
-          return true;
-        } else {
-          return false;
-        }
+  ifeval: function (string,data) {
+    var eval = peach.eval(string,data);
+    if (string.match(/^!/)) {
+      if (eval.length > 0) {
+        return false;
       }
+    } else if (eval.length < 1) {
+      return false;
+    }
+    return true;
+  },
+  eval: function (string,data) {
+    string      = string.replace(/^\s+|\s+$/g,'');
+    var pattern = '(?:!|)%([a-zA-Z0-9-]+)(?:\\|\\{([\\s\\S]*?)\\}|)(?:(?:\\.)([a-zA-Z0-9]+(?:=>([a-zA-Z0-9_]+)|=&gt;([a-zA-Z0-9_]+)|))|)';
+    var _match  = string.match(pattern);
+
+
+    function hasPattern() {
+      var _var    = _match[1];
+      var _alt    = _match[2];
+      var _prop   = _match[3];
+      var result;
+      if (data.hasOwnProperty(_var) && data[_var].length > 0) {
+        result = data[_var].replace(/^\s+|\s+$/g,'');
+        if (typeof _prop === 'string') {
+          return peach._toProp(result,_prop);
+        } else {
+          return result;
+        }
+      } else if (typeof _alt === 'string') {
+        return peach.it({template: _alt,data: data}).template;
+      } else {
+        return '';
+      }
+    }
+
+    if (_match) {
+      return hasPattern();
     } else {
       return string;
     }
-    return '';
   },
   _clear: function (string) {
     return string.replace(/(\r\n|\n|\r)/gm,'');
@@ -105,7 +124,7 @@ var peach = {
     var comment = '';
     if (find) {
       if (peach.debug) {
-        var tn_spacer = (new Array(26-name.length)).join(' ');
+        var tn_spacer = (new Array((26-name.length > 0)?26-name.length:1)).join(' ');
         var tf_spacer = (new Array(16-find.file.length)).join(' ');
         var comment   = '<!-- {Peach} '+find.file+tf_spacer+': '+name+tn_spacer+'-->\n';
       }
@@ -136,6 +155,7 @@ var peach = {
           iterData['oddOrEven'] = (i%2 === 0) ? 'odd' : 'even';
           iterData['isLast']    = (i+1 === data.length) ? 'true' : 'false';
           iterData['isFirst']   = (i < 1) ? 'true' : 'false';
+          iterData['length']    = data.length.toString();
           arr.push(peach.it({name: name,template: template,data: iterData}).template);
         }
         return arr.join('');
@@ -196,7 +216,7 @@ var peach = {
 
     function toArray(string) {
       var arr  = [];
-      var nest = peach._getNest('^[]',string);
+      var nest;
       while (string.match(/^\[/)) {
         nest = peach._getNest('^[]',string);
         arr.push(peach._stringToJavaScript(string.match(nest)[1]));
@@ -256,12 +276,13 @@ var peach = {
     ifmatch: function (options) {
       function bool(string,data) {
         // Match 'string'|variable <>!== 'string'|variable|number
-        var match = string.match(/([a-zA-Z0-9-% ]+)(?:\s+|)([!=<>]+)(?:\s+|)([a-zA-Z0-9-% ]+)/);
+        string = string.replace(/^\s+|\s+$/g,'');
+        var match = string.match(/([\s\S]*?)(?:\s+|)([!=<>]+)(?:\s+|)([\s\S]*?)$/);
         var left,right,condition,out;
         if (match) { // There are conditions
-          left      = peach._eval(match[1],data);
+          left      = peach.eval(match[1],data);
           condition = match[2];
-          right     = peach._eval(match[3],data);
+          right     = peach.eval(match[3],data);
           if (condition === '==') out = (left == right);
           else if (condition === '===') out = (left === right);
           else if (condition === '!=')  out = (left != right);
@@ -272,7 +293,7 @@ var peach = {
           else if (condition === '<')   out = (left < right);
           return out;
         } else {
-          return (peach._eval(string,data)) ? true : false;
+          return (peach.ifeval(string,data)) ? true : false;
         }
       }
 
@@ -379,27 +400,9 @@ var peach = {
     },
     insert: function (options) {
       var pattern = '%([a-zA-Z0-9-]+)(?:\\|\\{([\\s\\S]*?)\\}|)(?:(?:\\.)([a-zA-Z0-9]+(?:=>([a-zA-Z0-9_]+)|=&gt;([a-zA-Z0-9_]+)|))|)';
+      var eval;
       options.template = options.template.replace(new RegExp(pattern,'g'),function (m) {
-        var _out   = m;
-        var _match = m.match(pattern);
-        var _var   = _match[1];
-        var _alt   = _match[2];
-        var _prop  = _match[3];
-        var string;
-
-        if (options.data.hasOwnProperty(_var) && options.data[_var].length > 0) {
-          string = options.data[_var].replace(/^\s+|\s+$/g,'');
-          if (typeof _prop === 'string') {
-            _out = peach._toProp(string,_prop);
-          } else {
-            _out = string;
-          }
-        } else if (typeof _alt === 'string') {
-          _out = peach.it({template: _alt,data: options.data}).template;
-        } else {
-          _out = peach._error({code: 3,variable: m,name: options.name});
-        }
-        return _out;
+        return peach.eval(m,options.data);
       });
       return options;
     },
