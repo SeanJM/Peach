@@ -69,7 +69,6 @@ var peach = {
     var pattern = '(?:!|)%([a-zA-Z0-9-]+)(?:\\|\\{([\\s\\S]*?)\\}|)(?:(?:\\.)([a-zA-Z0-9]+(?:=>([a-zA-Z0-9_]+)|=&gt;([a-zA-Z0-9_]+)|))|)';
     var _match  = string.match(pattern);
 
-
     function hasPattern() {
       var _var    = _match[1];
       var _alt    = _match[2];
@@ -133,6 +132,10 @@ var peach = {
       return peach._error({code: 2,name: name});
     }
   },
+  raw: function (object) {
+    // Raw is peach.raw({template,call})
+
+  },
   js: {
     iterate: function (name,data) {
       var iterData = {};
@@ -180,6 +183,30 @@ var peach = {
       return pattern.join('');
     }
     return false;
+  },
+  add: function (template,file) {
+    var file = file||'no file specified';
+    var templates = {};
+    var match = peach._getNest('`([a-zA-Z0-9_-]+){}',template);
+
+    while (match) {
+      var templateMatch = template.match(match);
+      var name          = templateMatch[1];
+      var content       = templateMatch[2];
+
+      templates[name] = {
+        src: file,
+        template: content
+      }
+
+      template = template.replace(new RegExp(match),function (m) {
+        return '';
+      });
+
+      match = peach._getNest('`([a-zA-Z0-9_-]+){}',template);
+    }
+
+    return templates;
   },
   _stringToJavaScript: function (string) {
     var js;
@@ -270,7 +297,14 @@ var peach = {
   },
   script: {
     comments: function (options) {
-      options.template = options.template.replace(/^[\s+]+\/\*[\S\s]*?\*\/(\s+|)[\n]+|[\s+]+\/\/[\S\s]*?$/gm,'');
+      options.template = options.template.replace(/\@{\/\/[\s\S]*?}|(\s)\/\/[\s\S]*?\n|\/\*[\s\S]*?\*\/|\@{\/\*[\s\S]*?\*\/}/gm,function (m) {
+        var pattern = /@{(\/\/[\s\S]*?)}|\/\/[\s\S]*?\n|\/\*[\s\S]*?\*\/|@{(\/\*[\s\S]*?\*\/)}/;
+        if (m.match(/@{/)) {
+          return m.match(pattern)[1];
+        } else {
+          return '';
+        }
+      });
       return options;
     },
     ifmatch: function (options) {
@@ -406,6 +440,13 @@ var peach = {
       });
       return options;
     },
+    math: function (options) {
+      // Format %{3/6}
+      var pattern = peach._getNest('%{}',options.template);
+      options.template = options.template.replace(new RegExp(pattern),function (m) {
+        return eval(m.match(pattern)[1]);
+      });
+    },
     get: function (options) {
       function execute() {
         var pattern = '`([a-zA-Z0-9-_]+)';
@@ -443,13 +484,16 @@ var peach = {
       return options;
     },
     atGet: function (string) {
-      string = string.replace(/@\{[a-zA-Z0-9-]+\}/g,function (m) {
-        var find = peach.find(m.match(/@\{([a-zA-Z0-9-]+)\}/)[1]);
+      string = string.replace(/@\{[a-zA-Z0-9-_]+\}/g,function (m) {
+        var find = peach.find(m.match(/@\{([a-zA-Z0-9-_]+)\}/)[1]);
         if (find) {
           return find.template;
         } else {
           return m;
         }
+      });
+      string = string.replace(/`\\[a-zA-Z0-9-_]+|%\\[a-zA-Z0-9-]+/g,function (m) {
+        return m.replace(/\\/g,'')
       });
       return string;
     }
@@ -458,6 +502,7 @@ var peach = {
     peach.script['comments'](options);
     peach.script['ifmatch'](options);
     peach.script['insert'](options);
+    peach.script['math'](options);
     peach.script['get'](options);
     return options;
   },
@@ -497,31 +542,11 @@ var peach = {
       return arr;
     }
 
-    function add (file,template) {
-      var match         = peach._getNest('`([a-zA-Z0-9-_]+){}',template);
-      if (match) {
-        var templateMatch = template.match(match);
-        var name          = templateMatch[1];
-        var content       = templateMatch[2];
-
-        peach.template[name] = {
-          src: file,
-          template: content
-        }
-
-        template = template.replace(new RegExp(match),function (m) {
-          return '';
-        });
-
-        add(file,template);
-      }
-    }
-
     function load (filesArray,index,callback) {
       function execute() {
         $('<div/>').load(filesArray[index],function (d,k) {
           if (k === 'success') {
-            add(filesArray[index],d);
+            $.extend(peach.template,peach.add(d,filesArray[index]));
             load(filesArray,index+1,callback);
           } else {
             $('body').append(peach._error({code: 1,file: filesArray[index]}));
