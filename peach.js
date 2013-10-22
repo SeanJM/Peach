@@ -40,7 +40,7 @@ var peach = {
     } else if (error.code === 2) {
       error.text = 'Template: <strong>'+options.name+'</strong> does not exist.';
     } else if (error.code === 3) {
-      error.text = 'Template: '+peach.find(options.name).src+' : '+options.name+'<br/>Variable: <strong>'+options.variable+'</strong> is undefined.';
+      error.text = 'Template: '+peach.find(options.name,options).src+' : '+options.name+'<br/>Variable: <strong>'+options.variable+'</strong> is undefined.';
     } else if (error.code === 4) {
       error.text = 'Unmatched Brackets: the <strong>'+options.name+'</strong> template has a bad nest.';
     } else if (error.code === 5) {
@@ -53,8 +53,8 @@ var peach = {
     }
     return out;
   },
-  ifeval: function (string,data) {
-    var eval = peach.eval(string,data);
+  ifeval: function (string,options) {
+    var eval = peach.eval(string,options);
     if (string.match(/^!/)) {
       if (eval.length > 0) {
         return false;
@@ -64,8 +64,10 @@ var peach = {
     }
     return true;
   },
-  eval: function (string,data) {
+  eval: function (string,options) {
+    console.log(options);
     string      = string.replace(/^\s+|\s+$/g,'');
+    var data    = options.data;
     var pattern = '(?:!|)%([a-zA-Z0-9-]+)(?:\\|\\{([\\s\\S]*?)\\}|)(?:(?:\\.)([a-zA-Z0-9]+(?:=>([a-zA-Z0-9_]+)|=&gt;([a-zA-Z0-9_]+)|))|)';
     var _match  = string.match(pattern);
 
@@ -82,7 +84,7 @@ var peach = {
           return result;
         }
       } else if (typeof _alt === 'string') {
-        return peach.it({template: _alt,data: data}).template;
+        return peach.it({output: _alt,data: data,templates: options.templates}).output;
       } else {
         return '';
       }
@@ -103,23 +105,19 @@ var peach = {
     } else r = b;
     return r;
   },
-  find: function (name) {
-    var options = {};
-    var template;
-    var val;
-
-    if (peach.template.hasOwnProperty(name)) {
-      options.template = peach.template[name].template;
-      options.src      = peach.template[name].src;
-      options.file     = peach.template[name].src.split('/')[peach.template[name].src.split('/').length-1];
+  find: function (name,options) {
+    if (options.templates.hasOwnProperty(name)) {
+      options.output   = options.templates[name].template;
+      options.src      = options.templates[name].src;
+      options.file     = options.templates[name].src.split('/')[options.templates[name].src.split('/').length-1];
 
       return options;
     }
 
     return false;
   },
-  get: function (name,data) {
-    var find = peach.find(name);
+  get: function (name,options) {
+    var find = peach.find(name,options);
     var comment = '';
     if (find) {
       if (peach.debug) {
@@ -127,7 +125,7 @@ var peach = {
         var tf_spacer = (new Array(16-find.file.length)).join(' ');
         var comment   = '<!-- {Peach} '+find.file+tf_spacer+': '+name+tn_spacer+'-->\n';
       }
-      return comment+peach.js.iterate(name,data);
+      return comment+peach.js.iterate(name,options);
     } else {
       return peach._error({code: 2,name: name});
     }
@@ -137,11 +135,13 @@ var peach = {
 
   },
   js: {
-    iterate: function (name,data) {
-      var iterData = {};
-      var arr      = [];
-      var find     = peach.find(name);
-      var template = find.template;
+    iterate: function (name,options) {
+      var iterData  = {};
+      var arr       = [];
+      var find      = peach.find(name,options);
+      var output    = find.output;
+      var data      = options.data;
+      var templates = options.templates;
       var out;
       function ifString_convertToObject(unknown) {
         if (typeof unknown === 'object') {
@@ -159,16 +159,16 @@ var peach = {
           iterData['isLast']    = (i+1 === data.length) ? 'true' : 'false';
           iterData['isFirst']   = (i < 1) ? 'true' : 'false';
           iterData['length']    = data.length.toString();
-          arr.push(peach.it({name: name,template: template,data: iterData}).template);
+          arr.push(peach.it({name: name,output: output,data: iterData,templates: templates}).output);
         }
         return arr.join('');
       } else {
         // is an Object
-        return peach.it({name: name,template: template,data: data}).template;
+        return peach.it({name: name,output: output,data: data,templates: templates}).output;
       }
     },
   },
-  _getNest: function (pattern,string) {
+  getNest: function (pattern,string) {
     var start = pattern.substr(pattern.length-2,1);
     var end   = pattern.substr(pattern.length-1,1);
     pattern   = [pattern.substr(0,pattern.length-2),'(?:\\s+|)\\',start,'[\\s\\S]*?',end];
@@ -187,7 +187,7 @@ var peach = {
   add: function (template,file) {
     var file = file||'no file specified';
     var templates = {};
-    var match = peach._getNest('`([a-zA-Z0-9_-]+){}',template);
+    var match = peach.getNest('`([a-zA-Z0-9_-]+){}',template);
 
     while (match) {
       var templateMatch = template.match(match);
@@ -203,7 +203,7 @@ var peach = {
         return '';
       });
 
-      match = peach._getNest('`([a-zA-Z0-9_-]+){}',template);
+      match = peach.getNest('`([a-zA-Z0-9_-]+){}',template);
     }
 
     return templates;
@@ -216,7 +216,7 @@ var peach = {
       var property;
       var obj = {};
       while (string.match(/[a-zA-Z0-9-]+(\s+|)\{/)) {
-        property  = peach._getNest('('+string.match(/([a-zA-Z0-9-]+)(\s+|)\{/)[1]+'){}',string);
+        property  = peach.getNest('('+string.match(/([a-zA-Z0-9-]+)(\s+|)\{/)[1]+'){}',string);
         string    = string.replace(new RegExp(property),function (m) {
           match = m.match(property);
           obj[match[1]] = match[2];
@@ -245,7 +245,7 @@ var peach = {
       var arr  = [];
       var nest;
       while (string.match(/^\[/)) {
-        nest = peach._getNest('^[]',string);
+        nest = peach.getNest('^[]',string);
         arr.push(peach._stringToJavaScript(string.match(nest)[1]));
         string = string.replace(new RegExp(nest),'');
       }
@@ -297,7 +297,7 @@ var peach = {
   },
   script: {
     comments: function (options) {
-      options.template = options.template.replace(/\@{\/\/[\s\S]*?}|(\s)\/\/[\s\S]*?\n|\/\*[\s\S]*?\*\/|\@{\/\*[\s\S]*?\*\/}/gm,function (m) {
+      options.output = options.output.replace(/\@{\/\/[\s\S]*?}|(\s)\/\/[\s\S]*?\n|\/\*[\s\S]*?\*\/|\@{\/\*[\s\S]*?\*\/}/gm,function (m) {
         var pattern = /@{(\/\/[\s\S]*?)}|\/\/[\s\S]*?\n|\/\*[\s\S]*?\*\/|@{(\/\*[\s\S]*?\*\/)}/;
         if (m.match(/@{/)) {
           return m.match(pattern)[1];
@@ -308,15 +308,15 @@ var peach = {
       return options;
     },
     ifmatch: function (options) {
-      function bool(string,data) {
+      function bool(string) {
         // Match 'string'|variable <>!== 'string'|variable|number
-        string = string.replace(/^\s+|\s+$/g,'');
+        string    = string.replace(/^\s+|\s+$/g,'');
         var match = string.match(/([\s\S]*?)(?:\s+|)([!=<>]+)(?:\s+|)([\s\S]*?)$/);
         var left,right,condition,out;
         if (match) { // There are conditions
-          left      = peach.eval(match[1],data);
+          left      = peach.eval(match[1],options);
           condition = match[2];
-          right     = peach.eval(match[3],data);
+          right     = peach.eval(match[3],options);
           if (condition === '==') out = (left == right);
           else if (condition === '===') out = (left === right);
           else if (condition === '!=')  out = (left != right);
@@ -327,7 +327,7 @@ var peach = {
           else if (condition === '<')   out = (left < right);
           return out;
         } else {
-          return (peach.ifeval(string,data)) ? true : false;
+          return (peach.ifeval(string,options)) ? true : false;
         }
       }
 
@@ -341,13 +341,13 @@ var peach = {
       }
 
       function getWholeIf(string) {
-        var pattern       = peach._getNest('if(?:\\s+|)\\([\\s\\S]*?\\){}',string);
+        var pattern = peach.getNest('if(?:\\s+|)\\([\\s\\S]*?\\){}',string);
         if (hasElse(string,pattern)) {
-          while (peach._getNest(pattern+'else if(?:\\s+|)\\([\\s\\S]*?\\){}',string)) {
-            pattern = peach._getNest(pattern+'else if(?:\\s+|)\\([\\s\\S]*?\\){}',string);
+          while (peach.getNest(pattern+'else if(?:\\s+|)\\([\\s\\S]*?\\){}',string)) {
+            pattern = peach.getNest(pattern+'else if(?:\\s+|)\\([\\s\\S]*?\\){}',string);
           }
-          if (peach._getNest(pattern+'(?:\\s+|)(else){}',string)) {
-            pattern = peach._getNest(pattern+'(?:\\s+|)(else){}',string);
+          if (peach.getNest(pattern+'(?:\\s+|)(else){}',string)) {
+            pattern = peach.getNest(pattern+'(?:\\s+|)(else){}',string);
           }
         }
         return new RegExp(pattern);
@@ -375,7 +375,7 @@ var peach = {
         }
 
         for (var i=0;i<compare.length;i++) {
-          boolReturn = bool(compare[i],options.data);
+          boolReturn = bool(compare[i]);
           if (op === 'or' && boolReturn === true) {
             i=compare.length;
           } else if (op === 'and' && boolReturn === false) {
@@ -386,7 +386,7 @@ var peach = {
       }
 
       function getIf(string) {
-        var _if = peach._getNest('^if(?:\\s+|)\\(([\\s\\S]*?)\\){}',string);
+        var _if = peach.getNest('^if(?:\\s+|)\\(([\\s\\S]*?)\\){}',string);
         if (_if) { _if += '((\\s+|)else(\\s+|)|)'; }
         return _if;
       }
@@ -400,7 +400,7 @@ var peach = {
         function doIf () {
           var _if        = getIf(string);
           var _ifmatch   = string.match(_if);
-          var _else      = peach._getNest('^{}',string);
+          var _else      = peach.getNest('^{}',string);
           var _elsematch = string.match(_else);
 
           if (_if) {
@@ -421,8 +421,8 @@ var peach = {
       }
 
       function execute() {
-        while (options.template.match(/if(\s+|)\([\s\S]*?\)/)) {
-          options.template = options.template.replace(getWholeIf(options.template),function (m) {
+        while (options.output.match(/if(\s+|)\([\s\S]*?\)/)) {
+          options.output = options.output.replace(getWholeIf(options.output),function (m) {
             return ifProcess(m);
           });
         }
@@ -434,16 +434,15 @@ var peach = {
     },
     insert: function (options) {
       var pattern = '%([a-zA-Z0-9-]+)(?:\\|\\{([\\s\\S]*?)\\}|)(?:(?:\\.)([a-zA-Z0-9]+(?:=>([a-zA-Z0-9_]+)|=&gt;([a-zA-Z0-9_]+)|))|)';
-      var eval;
-      options.template = options.template.replace(new RegExp(pattern,'g'),function (m) {
-        return peach.eval(m,options.data);
+      options.output = options.output.replace(new RegExp(pattern,'g'),function (m) {
+        return peach.eval(m,options);
       });
       return options;
     },
     math: function (options) {
       // Format %{3/6}
-      var pattern = peach._getNest('%{}',options.template);
-      options.template = options.template.replace(new RegExp(pattern),function (m) {
+      var pattern = peach.getNest('%{}',options.output);
+      options.output = options.output.replace(new RegExp(pattern),function (m) {
         return eval(m.match(pattern)[1]);
       });
     },
@@ -451,18 +450,17 @@ var peach = {
       function execute() {
         var pattern = '`([a-zA-Z0-9-_]+)';
 
-        while (options.template.match(pattern)) {
-          var templateMatch      = options.template.match(pattern);
-          var templateName       = templateMatch[1];
-          var templateNest       = peach._getNest('('+templateMatch[0]+'){}',options.template);
-          var templateProperties = {};
+        while (options.output.match(pattern)) {
+          var templateMatch = options.output.match(pattern);
+          var templateName  = templateMatch[1];
+          var templateNest  = peach.getNest('('+templateMatch[0]+'){}',options.output);
+          var _options      = $.extend({},options);
           var nest;
 
-
           if (templateNest) {
-            nest = options.template.match(templateNest);
+            nest = options.output.match(templateNest);
             if (nest) {
-              templateProperties = peach._stringToJavaScript(nest[2]);
+              _options.data = peach._stringToJavaScript(nest[2]);
             } else {
               $('body').append(peach._error({code: 4,name: templateName}));
               break;
@@ -471,10 +469,8 @@ var peach = {
             templateNest = pattern;
           }
 
-          peach.cloneObj({source: options.data, destination: templateProperties});
-
-          options.template = options.template.replace(new RegExp(templateNest),function (m) {
-            return peach.get(templateName,templateProperties);
+          options.output = options.output.replace(new RegExp(templateNest),function (m) {
+            return peach.get(templateName,_options);
           });
         }
       }
@@ -483,11 +479,11 @@ var peach = {
 
       return options;
     },
-    atGet: function (string) {
+    atGet: function (string,options) {
       string = string.replace(/@\{[a-zA-Z0-9-_]+\}/g,function (m) {
-        var find = peach.find(m.match(/@\{([a-zA-Z0-9-_]+)\}/)[1]);
+        var find = peach.find(m.match(/@\{([a-zA-Z0-9-_]+)\}/)[1],options);
         if (find) {
-          return find.template;
+          return find.output;
         } else {
           return m;
         }
@@ -513,23 +509,23 @@ var peach = {
     }
   },
   start: function (options) {
-    var _options = $.extend(options,{});
-    return options.template.replace(/~![\s\S]*?!~/g,function (m) {
-      _options.template = m.match(/~!([\s\S]*?)!~/)[1];
-      return peach.script['atGet'](peach.it(_options).template.replace());
+    return options.output.replace(/~![\s\S]*?!~/g,function (m) {
+      options.output = m.match(/~!([\s\S]*?)!~/)[1];
+      return peach.script['atGet'](peach.it(options).output,options);
     });
   },
   init:function (data,options) {
-    var defaults          = {directory: 'templates/'};
-    var peachData         = $('div[data-peach]'); // Check to see if the data-peach is present, if not, throw an error
-    var template          = peachData.html();
-    var peachAttr         = peachData.attr('data-peach');
-    var directory         = options.directory||defaults.directory;
-    var templates         = toTemplateFile(peach._clear(peachAttr.match(/templates:([\t\r\n\.\/a-zA-Z0-9_, ]+)(;|)/)[1]).replace(/ /g,'').split(','),directory);
-    var timeStart         = new Date();
+    var defaults      = {directory: 'templates/'};
+    var peachData     = $('div[data-peach]'); // Check to see if the data-peach is present, if not, throw an error
+    var output        = peachData.html();
+    var peachAttr     = peachData.attr('data-peach');
+    var directory     = options.directory||defaults.directory;
+    var templateFiles = toTemplateFile(peach._clear(peachAttr.match(/templates:([\t\r\n\.\/a-zA-Z0-9_, ]+)(;|)/)[1]).replace(/ /g,'').split(','),directory);
+    var templates     = {};
+    var timeStart     = new Date();
     var container;
 
-    peach.initTemplate = template;
+    peach.initTemplate = output;
     peach.initData     = data;
     peach.debug        = (peachAttr.match(/debug(\s+|);/)) ? true : false;
     peach.autoRefresh  = (peachAttr.match(/autoRefresh(\s+|);/)) ? true : false;
@@ -546,13 +542,13 @@ var peach = {
       function execute() {
         $('<div/>').load(filesArray[index],function (d,k) {
           if (k === 'success') {
-            $.extend(peach.template,peach.add(d,filesArray[index]));
+            $.extend(templates,peach.add(d,filesArray[index]));
             load(filesArray,index+1,callback);
           } else {
             $('body').append(peach._error({code: 1,file: filesArray[index]}));
           }
           if ((index+1) === filesArray.length && typeof callback === 'function') {
-            callback();
+            callback(templates);
           }
         });
       }
@@ -561,14 +557,14 @@ var peach = {
       }
     }
 
-    load(templates,0,function () {
-      template = peach.start({template:template,data:data});
+    load(templateFiles,0,function () {
+      output = peach.start({output:output,data:data,templates:templates});
       if ($('.peach-container').size() < 1) {
         container = $('<div class="peach-container"></div>');
         $('div[data-peach]').after(container);
         $('div[data-peach]').remove();
       }
-      $('.peach-container').html(template);
+      $('.peach-container').html(output);
       peach.setTime(timeStart);
       if (typeof options.onload === 'function') {
         options.onload();
