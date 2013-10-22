@@ -12,24 +12,10 @@
 /* Global Stuff */
 
 var peach = {
-  template: {},
+  templates: {},
   dataFilter: {},
-  options: function (object) {
-    object.data["index"]     = 1;
-    object.data["oddOrEven"] = 'odd';
-    object.data["isLast"]    = true;
-    object.data["isFirst"]   = true;
-
-    return object;
-  },
-  cloneObj: function (object) {
-    for (k in object.destination) {
-      object.source[k] = object.destination[k];
-    }
-    return object;
-  },
   _fn: {},
-  _error: function (options) {
+  error: function (options) {
     var error = {
       template:'<span class="peach-error"><span class="peach-error_text">%text</span></span>',
       code: options.code
@@ -65,7 +51,6 @@ var peach = {
     return true;
   },
   eval: function (string,options) {
-    console.log(options);
     string      = string.replace(/^\s+|\s+$/g,'');
     var data    = options.data;
     var pattern = '(?:!|)%([a-zA-Z0-9-]+)(?:\\|\\{([\\s\\S]*?)\\}|)(?:(?:\\.)([a-zA-Z0-9]+(?:=>([a-zA-Z0-9_]+)|=&gt;([a-zA-Z0-9_]+)|))|)';
@@ -84,7 +69,7 @@ var peach = {
           return result;
         }
       } else if (typeof _alt === 'string') {
-        return peach.it({output: _alt,data: data,templates: options.templates}).output;
+        return peach.pit({output: _alt,data: data,templates: options.templates}).output;
       } else {
         return '';
       }
@@ -122,12 +107,12 @@ var peach = {
     if (find) {
       if (peach.debug) {
         var tn_spacer = (new Array((26-name.length > 0)?26-name.length:1)).join(' ');
-        var tf_spacer = (new Array(16-find.file.length)).join(' ');
+        var tf_spacer = (new Array((16-find.file.length > 0)?16-find.file.length:1)).join(' ');
         var comment   = '<!-- {Peach} '+find.file+tf_spacer+': '+name+tn_spacer+'-->\n';
       }
       return comment+peach.js.iterate(name,options);
     } else {
-      return peach._error({code: 2,name: name});
+      return peach.error({code: 2,name: name});
     }
   },
   raw: function (object) {
@@ -159,12 +144,12 @@ var peach = {
           iterData['isLast']    = (i+1 === data.length) ? 'true' : 'false';
           iterData['isFirst']   = (i < 1) ? 'true' : 'false';
           iterData['length']    = data.length.toString();
-          arr.push(peach.it({name: name,output: output,data: iterData,templates: templates}).output);
+          arr.push(peach.pit({name: name,output: output,data: iterData,templates: templates}).output);
         }
         return arr.join('');
       } else {
         // is an Object
-        return peach.it({name: name,output: output,data: data,templates: templates}).output;
+        return peach.pit({name: name,output: output,data: data,templates: templates}).output;
       }
     },
   },
@@ -282,7 +267,7 @@ var peach = {
         if (typeof peach._fn[isFn[1]] === 'function') {
           return peach._fn[isFn[1]](unknown);
         } else {
-          return peach._error({code: 5,fn: isFn[1]});
+          return peach.error({code: 5,fn: isFn[1]});
         }
       } else {
         if (typeof propFn()[prop] === 'function') {
@@ -462,7 +447,7 @@ var peach = {
             if (nest) {
               _options.data = peach._stringToJavaScript(nest[2]);
             } else {
-              $('body').append(peach._error({code: 4,name: templateName}));
+              $('body').append(peach.error({code: 4,name: templateName}));
               break;
             }
           } else {
@@ -494,7 +479,7 @@ var peach = {
       return string;
     }
   }, /* FN */
-  it: function (options) {
+  pit: function (options) {
     peach.script['comments'](options);
     peach.script['ifmatch'](options);
     peach.script['insert'](options);
@@ -511,7 +496,7 @@ var peach = {
   start: function (options) {
     return options.output.replace(/~![\s\S]*?!~/g,function (m) {
       options.output = m.match(/~!([\s\S]*?)!~/)[1];
-      return peach.script['atGet'](peach.it(options).output,options);
+      return peach.script['atGet'](peach.pit(options).output,options);
     });
   },
   init:function (data,options) {
@@ -542,13 +527,13 @@ var peach = {
       function execute() {
         $('<div/>').load(filesArray[index],function (d,k) {
           if (k === 'success') {
-            $.extend(templates,peach.add(d,filesArray[index]));
+            $.extend(peach.templates,peach.add(d,filesArray[index]));
             load(filesArray,index+1,callback);
           } else {
-            $('body').append(peach._error({code: 1,file: filesArray[index]}));
+            $('body').append(peach.error({code: 1,file: filesArray[index]}));
           }
           if ((index+1) === filesArray.length && typeof callback === 'function') {
-            callback(templates);
+            callback();
           }
         });
       }
@@ -558,7 +543,7 @@ var peach = {
     }
 
     load(templateFiles,0,function () {
-      output = peach.start({output:output,data:data,templates:templates});
+      output = peach.start({output:output,data:data,templates:peach.templates});
       if ($('.peach-container').size() < 1) {
         container = $('<div class="peach-container"></div>');
         $('div[data-peach]').after(container);
