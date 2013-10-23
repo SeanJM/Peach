@@ -52,31 +52,40 @@ var peach = {
   },
   eval: function (string,options) {
     string      = string.replace(/^\s+|\s+$/g,'');
+    //           Not Equal - Variable    -   Property               -   Alt              - Is Escaped - Calc
+    var pattern = '(?:!|)%([a-zA-Z0-9-]+)(?:(?:\\.)([a-zA-Z0-9]+|)|)(?:\\|\\{([\\s\\S]*?)\\}|)(?:\|)|(calc)\\{([\\s\\S]*?)\\}';
+    var match   = string.match(pattern);
     var data    = options.data;
-    var pattern = '(?:!|)%([a-zA-Z0-9-]+)(?:\\|\\{([\\s\\S]*?)\\}|)(?:(?:\\.)([a-zA-Z0-9]+(?:=>([a-zA-Z0-9_]+)|=&gt;([a-zA-Z0-9_]+)|))|)';
-    var _match  = string.match(pattern);
 
-    function hasPattern() {
-      var _var    = _match[1];
-      var _alt    = _match[2];
-      var _prop   = _match[3];
+    function _eval() {
+      //If is regular variable
+      var _var    = match[1];
+      var _prop   = match[2];
+      var _alt    = match[3];
       var result;
-      if (data.hasOwnProperty(_var) && data[_var].length > 0) {
-        result = data[_var].replace(/^\s+|\s+$/g,'');
-        if (typeof _prop === 'string') {
-          return peach._toProp(result,_prop);
-        } else {
-          return result;
-        }
-      } else if (typeof _alt === 'string') {
-        return peach.pit({output: _alt,data: data,templates: options.templates}).output;
+      // Is Calc
+      if (typeof match[4] === 'string') {
+        return eval(peach.pit({output: match[5],data: data, templates: options.templates}).output);
       } else {
-        return '';
+        if (_var.replace(/[0-9]+/,'').length < 1) {
+          return match[0];
+        } else if (data.hasOwnProperty(_var) && data[_var].length > 0) {
+          result = data[_var].replace(/^\s+|\s+$/g,'');
+          if (typeof _prop === 'string') {
+            return peach._toProp(result,_prop);
+          } else {
+            return result;
+          }
+        } else if (typeof _alt === 'string') {
+          return peach.pit({output: _alt,data: data,templates: options.templates}).output;
+        } else {
+          return '';
+        }
       }
     }
 
-    if (_match) {
-      return hasPattern();
+    if (match) {
+      return _eval();
     } else {
       return string;
     }
@@ -418,18 +427,12 @@ var peach = {
       return options;
     },
     insert: function (options) {
-      var pattern = '%([a-zA-Z0-9-]+)(?:\\|\\{([\\s\\S]*?)\\}|)(?:(?:\\.)([a-zA-Z0-9]+(?:=>([a-zA-Z0-9_]+)|=&gt;([a-zA-Z0-9_]+)|))|)';
+      //           Not Equal - Variable    -   Property               -   Alt                   - Calc
+      var pattern = '(?:!|)%([a-zA-Z0-9-]+)(?:(?:\\.)([a-zA-Z0-9]+|)|)(?:\\|\\{([\\s\\S]*?)\\}|)|(calc)\\{([\\s\\S]*?)\\}';
       options.output = options.output.replace(new RegExp(pattern,'g'),function (m) {
         return peach.eval(m,options);
       });
       return options;
-    },
-    math: function (options) {
-      // Format %{3/6}
-      var pattern = peach.getNest('%{}',options.output);
-      options.output = options.output.replace(new RegExp(pattern),function (m) {
-        return eval(m.match(pattern)[1]);
-      });
     },
     get: function (options) {
       function execute() {
@@ -480,10 +483,10 @@ var peach = {
     }
   }, /* FN */
   pit: function (options) {
+    options.templates = options.templates||peach.templates;
     peach.script['comments'](options);
     peach.script['ifmatch'](options);
     peach.script['insert'](options);
-    peach.script['math'](options);
     peach.script['get'](options);
     return options;
   },
