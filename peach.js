@@ -53,7 +53,7 @@ var peach = {
   eval: function (string,options) {
     string      = string.replace(/^\s+|\s+$/g,'');
     //           Not Equal - Variable    -   Property               -   Alt              - Is Escaped - Calc
-    var pattern = '(?:!|)%([a-zA-Z0-9-]+)(?:(?:\\.)([a-zA-Z0-9]+|)|)(?:\\|\\{([\\s\\S]*?)\\}|)(?:\|)|(calc)\\{([\\s\\S]*?)\\}';
+    var pattern = '(?:!|)%([a-zA-Z0-9-]+)(?:(?:\\.)([a-zA-Z0-9]+|)|)(?:\\|\\{([\\s\\S]*?)\\}|)(?:\\\\|)|(calc)\\{([\\s\\S]*?)\\}';
     var match   = string.match(pattern);
     var data    = options.data;
 
@@ -135,7 +135,6 @@ var peach = {
       var find      = peach.find(name,options);
       var output    = find.output;
       var data      = options.data;
-      var templates = options.templates;
       var out;
       function ifString_convertToObject(unknown) {
         if (typeof unknown === 'object') {
@@ -153,12 +152,12 @@ var peach = {
           iterData['isLast']    = (i+1 === data.length) ? 'true' : 'false';
           iterData['isFirst']   = (i < 1) ? 'true' : 'false';
           iterData['length']    = data.length.toString();
-          arr.push(peach.pit({name: name,output: output,data: iterData,templates: templates}).output);
+          arr.push(peach.pit({name: name,output: output,data: iterData,templates: options.templates}).output);
         }
         return arr.join('');
       } else {
         // is an Object
-        return peach.pit({name: name,output: output,data: data,templates: templates}).output;
+        return peach.pit({name: name,output: output,data: data,templates: options.templates}).output;
       }
     },
   },
@@ -427,8 +426,8 @@ var peach = {
       return options;
     },
     insert: function (options) {
-      //           Not Equal - Variable    -   Property               -   Alt                   - Calc
-      var pattern = '(?:!|)%([a-zA-Z0-9-]+)(?:(?:\\.)([a-zA-Z0-9]+|)|)(?:\\|\\{([\\s\\S]*?)\\}|)|(calc)\\{([\\s\\S]*?)\\}';
+      //           Not Equal - Variable    -   Property               -   Alt              - Is Escaped - Calc
+      var pattern = '(?:!|)%([a-zA-Z0-9-]+)(?:(?:\\.)([a-zA-Z0-9]+|)|)(?:\\|\\{([\\s\\S]*?)\\}|)(?:\\\\\|)|(calc)\\{([\\s\\S]*?)\\}';
       options.output = options.output.replace(new RegExp(pattern,'g'),function (m) {
         return peach.eval(m,options);
       });
