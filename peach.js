@@ -43,19 +43,35 @@ var peach = {
     var eval = peach.eval(string,options);
     if (string.match(/^!/)) {
       if (eval.length > 0) {
-        return false;
+        if (eval == 'true') {
+          return false;
+        }
+        else if (eval == 'false') {
+          return true;
+        } else {
+          return false;
+        }
+      } else {
+        return true;
       }
     } else if (eval.length < 1) {
+      return false;
+    }
+    if (eval == 'true') {
+      return true;
+    }
+    else if (eval == 'false') {
       return false;
     }
     return true;
   },
   eval: function (string,options) {
-    string      = string.replace(/^\s+|\s+$/g,'');
-    //           Not Equal - Variable    -   Property               -   Alt              - Is Escaped - Calc
-    var pattern = '(?:!|)%([a-zA-Z0-9-]+)(?:(?:\\.)([a-zA-Z0-9]+|)|)(?:\\|\\{([\\s\\S]*?)\\}|)(?:\\\\|)|(calc)\\{([\\s\\S]*?)\\}';
-    var match   = string.match(pattern);
-    var data    = options.data;
+    string       = string.replace(/^\s+|\s+$/g,'');
+    //            Not Equal - Variable    -   Property               -   Alt              - Is Escaped - Calc
+    var pattern  = '(?:!|)%([a-zA-Z0-9-]+)(?:(?:\\.)([a-zA-Z0-9]+|)|)(?:\\|\\{([\\s\\S]*?)\\}|)(?:\\\\|)|(calc)\\{([\\s\\S]*?)\\}';
+    var match    = string.match(pattern);
+    var data     = options.data;
+    var _options = $.extend({},options);
 
     function _eval() {
       //If is regular variable
@@ -70,11 +86,17 @@ var peach = {
         if (_var.replace(/[0-9]+/,'').length < 1) {
           return match[0];
         } else if (data.hasOwnProperty(_var) && data[_var].length > 0) {
-          result = data[_var].replace(/^\s+|\s+$/g,'');
-          if (typeof _prop === 'string') {
-            return peach._toProp(result,_prop);
+          // The value of data is a string
+          if (typeof data[_var] === 'string') {
+            result = data[_var].replace(/^\s+|\s+$/g,'');
+            if (typeof _prop === 'string') {
+              return peach._toProp(result,_prop);
+            } else {
+              return result;
+            }
           } else {
-            return result;
+            // The value of data is a javascript object or an array
+            //return data[_var];
           }
         } else if (typeof _alt === 'string') {
           return peach.pit({output: _alt,data: data,templates: options.templates}).output;
@@ -93,19 +115,14 @@ var peach = {
   _clear: function (string) {
     return string.replace(/(\r\n|\n|\r)/gm,'');
   },
-  _match: function (b,r) {
-    if (typeof r !== 'undefined') {
-      r = new RegExp(b,r);
-    } else r = b;
-    return r;
-  },
   find: function (name,options) {
+    var _options = {};
     if (options.templates.hasOwnProperty(name)) {
-      options.output   = options.templates[name].template;
-      options.src      = options.templates[name].src;
-      options.file     = options.templates[name].src.split('/')[options.templates[name].src.split('/').length-1];
+      _options.output   = options.templates[name].template;
+      _options.src      = options.templates[name].src||'No source specified';
+      _options.file     = _options.src.split('/')[_options.src.split('/').length-1];
 
-      return options;
+      return _options;
     }
 
     return false;
@@ -140,7 +157,7 @@ var peach = {
         if (typeof unknown === 'object') {
           return unknown;
         } else {
-          return peach._stringToObject(unknown);
+          return peach._stringToJavaScript(unknown);
         }
       }
       // is an Array
@@ -202,7 +219,16 @@ var peach = {
     return templates;
   },
   _stringToJavaScript: function (string) {
-    var js;
+    var js = string;
+
+    // is Object
+    function isObject(string) {
+      if (string.match(/^[a-zA-Z0-9-]+(\s+|)\{/)) {
+        return true;
+      } else {
+        return false;
+      }
+    }
 
     // Objects
     function toObject(string) {
@@ -234,6 +260,7 @@ var peach = {
       }
     }
 
+
     function toArray(string) {
       var arr  = [];
       var nest;
@@ -247,7 +274,7 @@ var peach = {
 
     if (isArray(string)) {
       js = toArray(string);
-    } else {
+    } else if(isObject(string)) {
       js = toObject(string);
     }
     return js;
@@ -262,27 +289,18 @@ var peach = {
           return unknown.toUpperCase();
         },
         length: function () {
-          return unknown.length;
+          return peach._stringToJavaScript(unknown).length;
         },
         toDash: function () {
-          return unknown.toLowerCase().replace(/\s+/g,'-');
+          return unknown.toLowerCase().replace(/\s+/g,'-').replace(/&amp;/g,'and');
         }
       }
     }
     if (prop) { // For IE 8
-      var isFn = prop.match(/=>([a-zA-Z0-9+]+)/);
-      if (isFn) {
-        if (typeof peach._fn[isFn[1]] === 'function') {
-          return peach._fn[isFn[1]](unknown);
-        } else {
-          return peach.error({code: 5,fn: isFn[1]});
-        }
+      if (typeof propFn()[prop] === 'function') {
+        return propFn(unknown)[prop]();
       } else {
-        if (typeof propFn()[prop] === 'function') {
-          return propFn(unknown)[prop]();
-        } else {
-          return unknown+'.'+prop;
-        }
+        return unknown+'.'+prop;
       }
     } else {
       return unknown;
@@ -501,12 +519,16 @@ var peach = {
       return peach.script['atGet'](peach.pit(options).output,options);
     });
   },
-  init:function (data,options) {
-    var defaults      = {directory: 'templates/'};
+  init_compiled: function (data,options) {
+    if (typeof options.onload === 'function') {
+      options.onload();
+    }
+  },
+  init_default: function (data,options) {
     var peachData     = $('div[data-peach]'); // Check to see if the data-peach is present, if not, throw an error
     var output        = peachData.html();
     var peachAttr     = peachData.attr('data-peach');
-    var directory     = options.directory||defaults.directory;
+    var directory     = options.directory||'templates/';
     var templateFiles = toTemplateFile(peach._clear(peachAttr.match(/templates:([\t\r\n\.\/a-zA-Z0-9_, ]+)(;|)/)[1]).replace(/ /g,'').split(','),directory);
     var templates     = {};
     var timeStart     = new Date();
@@ -557,6 +579,15 @@ var peach = {
         options.onload();
       }
     });
+  },
+  init:function (data,options) {
+    data    = data||{};
+    options = options||{};
+    if ($('div[data-peach]').size() > 0) {
+      peach.init_default(data,options);
+    } else {
+      peach.init_compiled(data,options);
+    }
 
   }
 }
