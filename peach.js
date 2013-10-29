@@ -14,39 +14,38 @@
 var peach = {
   templates: {},
   dataFilter: {},
-  _fn: {},
   error: function (options) {
     var error = {
-      template:'<span class="peach-error"><span class="peach-error_text">%text</span></span>',
+      template: '<span class="peach-error"><span class="peach-error_text">%text</span></span>',
       code: options.code
     }
     var out = '';
     if (error.code === 1) {
-      error.text = 'Template file: <strong>'+options.file+'</strong> does not exists.';
+      error.text = 'Template file: <strong>' + options.file + '</strong> does not exists.';
     } else if (error.code === 2) {
-      error.text = 'Template: <strong>'+options.name+'</strong> does not exist.';
+      error.text = 'Template: <strong>' + options.name + '</strong> does not exist.';
     } else if (error.code === 3) {
-      error.text = 'Template: '+peach.find(options.name,options).src+' : '+options.name+'<br/>Variable: <strong>'+options.variable+'</strong> is undefined.';
+      error.text = 'Template: ' + peach.find(options.name, options).src + ' : ' + options.name + '<br/>Variable: <strong>' + options.variable + '</strong> is undefined.';
     } else if (error.code === 4) {
-      error.text = 'Unmatched Brackets: the <strong>'+options.name+'</strong> template has a bad nest.';
+      error.text = 'Unmatched Brackets: the <strong>' + options.name + '</strong> template has a bad nest.';
     } else if (error.code === 5) {
-      error.text = 'Undefined Function: <strong>'+options.fn+'</strong><br/>Please define this function using: peach._fn.'+options.fn;
+      error.text = 'Undefined Function: <strong>' + options.fn + '</strong><br/>Please define this function using: peach._fn.' + options.fn;
     }
     if (peach.debug) {
-      out = error.template.replace(/%[a-z]+/g,function (m) {
+      out = error.template.replace(/%[a-z]+/g, function (m) {
         return error[m.match(/%([a-z]+)/)[1]];
       });
     }
     return out;
   },
-  ifeval: function (string,options) {
-    var eval = peach.eval(string,options);
+  ifeval: function (string, options) {
+    var evaluate = peach.eval(string, options);
     if (string.match(/^!/)) {
-      if (eval.length > 0) {
-        if (eval == 'true') {
+      if (evaluate.length > 0) {
+        if (evaluate === 'true') {
           return false;
         }
-        else if (eval == 'false') {
+        else if (evaluate === 'false') {
           return true;
         } else {
           return false;
@@ -54,18 +53,18 @@ var peach = {
       } else {
         return true;
       }
-    } else if (eval.length < 1) {
+    } else if (evaluate.length < 1) {
       return false;
     }
-    if (eval == 'true') {
+    if (evaluate === 'true') {
       return true;
     }
-    else if (eval == 'false') {
+    else if (evaluate === 'false') {
       return false;
     }
     return true;
   },
-  eval: function (string,options) {
+  eval: function (string, options) {
     string       = string.replace(/^\s+|\s+$/g,'');
     //            Not Equal - Variable    -   Property               -   Alt              - Is Escaped - Calc
     var pattern  = '(?:!|)%([a-zA-Z0-9-]+)(?:(?:\\.)([a-zA-Z0-9]+|)|)(?:\\|\\{([\\s\\S]*?)\\}|)(?:\\\\|)|(calc)\\{([\\s\\S]*?)\\}';
@@ -115,7 +114,7 @@ var peach = {
   _clear: function (string) {
     return string.replace(/(\r\n|\n|\r)/gm,'');
   },
-  find: function (name,options) {
+  find: function (name, options) {
     var _options = {};
     if (options.templates.hasOwnProperty(name)) {
       _options.output   = options.templates[name].template;
@@ -127,7 +126,7 @@ var peach = {
 
     return false;
   },
-  get: function (name,options) {
+  get: function (name, options) {
     var find = peach.find(name,options);
     var comment = '';
     if (find) {
@@ -146,13 +145,13 @@ var peach = {
 
   },
   js: {
-    iterate: function (name,options) {
-      var iterData  = {};
-      var arr       = [];
-      var find      = peach.find(name,options);
-      var output    = find.output;
-      var data      = options.data;
-      var out;
+    iterate: function (name, options) {
+      var iterData  = {},
+          arr       = [],
+          find      = peach.find(name,options),
+          output    = find.output,
+          data      = options.data,
+          out;
       function ifString_convertToObject(unknown) {
         if (typeof unknown === 'object') {
           return unknown;
@@ -194,7 +193,7 @@ var peach = {
       return false;
     }
   },
-  getNest: function (pattern,string) {
+  getNest: function (pattern, string) {
     var start = pattern.substr(pattern.length-2,1);
     var end   = pattern.substr(pattern.length-1,1);
     pattern   = [pattern.substr(0,pattern.length-2),'(?:\\s+|)\\',start,'[\\s\\S]*?',end];
@@ -210,7 +209,7 @@ var peach = {
     }
     return false;
   },
-  add: function (template,file) {
+  add: function (template, file) {
     var file = file||'no file specified';
     var templates = {};
     var match = peach.getNest('`([a-zA-Z0-9_-]+){}',template);
@@ -274,7 +273,6 @@ var peach = {
         return false;
       }
     }
-
 
     function toArray(string) {
       var arr  = [];
@@ -598,13 +596,12 @@ var peach = {
 
     load(templateFiles,0,function () {
       output = peach.start({output:output,data:data,templates:peach.templates});
+      peach.setTime(timeStart);
       if ($('.peach-container').size() < 1) {
-        container = $('<div class="peach-container"></div>');
-        $('div[data-peach]').after(container);
+        $('div[data-peach]').after($('<div class="peach-container"></div>'));
         $('div[data-peach]').remove();
       }
       $('.peach-container').html(output);
-      peach.setTime(timeStart);
       if (typeof options.onload === 'function') {
         options.onload();
       }
