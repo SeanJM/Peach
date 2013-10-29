@@ -178,6 +178,22 @@ var peach = {
       }
     },
   },
+  getArray: function (string) {
+    // Must strip white space characters because of Peach to JavaScript conversion
+    var pattern = ['\\[','[\\s\\S]*?','\\]'];
+    var match   = string.match(pattern.join(''));
+    if (match) {
+      while (match && match[0].match(/\[/g).length > match[0].match(/\]/g).length) {
+        pattern.push('[\\s\\S]*?','(?:\\s+|)\\]')
+        match   = string.match(pattern.join(''));
+      }
+      pattern.splice(1,0,'(');
+      pattern.splice(pattern.length-1,0,')');
+      return pattern.join('');
+    } else {
+      return false;
+    }
+  },
   getNest: function (pattern,string) {
     var start = pattern.substr(pattern.length-2,1);
     var end   = pattern.substr(pattern.length-1,1);
@@ -219,8 +235,7 @@ var peach = {
     return templates;
   },
   _stringToJavaScript: function (string) {
-    var js = string;
-
+    string = string.replace(/^\s+|\s+$/g,'');
     // is Object
     function isObject(string) {
       if (string.match(/^[a-zA-Z0-9-]+(\s+|)\{/)) {
@@ -253,7 +268,7 @@ var peach = {
         dition of being an array
       */
       string = string.replace(/^\s+|\s+$/g,'');
-      if (string.match(/^\[[\S\s]*?\]$/m)) {
+      if (string.match(/^\[/m)) {
         return true;
       } else {
         return false;
@@ -264,8 +279,8 @@ var peach = {
     function toArray(string) {
       var arr  = [];
       var nest;
-      while (string.match(/^\[/)) {
-        nest = peach.getNest('^[]',string);
+      while (string.match(/^(\s+|)\[/)) {
+        nest   = peach.getArray(string);
         arr.push(peach._stringToJavaScript(string.match(nest)[1]));
         string = string.replace(new RegExp(nest),'');
       }
@@ -293,6 +308,21 @@ var peach = {
         },
         toDash: function () {
           return unknown.toLowerCase().replace(/\s+/g,'-').replace(/&amp;/g,'and');
+        },
+        toMonth: function () {
+
+          return ['January',
+                  'February',
+                  'March',
+                  'April',
+                  'May',
+                  'June',
+                  'July',
+                  'August',
+                  'September',
+                  'October',
+                  'November',
+                  'December'][parseInt(unknown)-1];
         }
       }
     }
