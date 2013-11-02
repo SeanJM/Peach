@@ -552,28 +552,16 @@ var peach = {
       options.onload();
     }
   },
-  init_default: function (data,options) {
-    var peachData     = $('div[data-peach]'); // Check to see if the data-peach is present, if not, throw an error
-    var output        = peachData.html();
-    var peachAttr     = peachData.attr('data-peach');
-    var directory     = options.directory||'templates/';
-    var templateFiles = toTemplateFile(peach._clear(peachAttr.match(/templates:([\t\r\n\.\/a-zA-Z0-9_, ]+)(;|)/)[1]).replace(/ /g,'').split(','),directory);
-    var templates     = {};
-    var timeStart     = new Date();
-    var container;
-
-    peach.initTemplate = output;
-    peach.initData     = data;
-    peach.debug        = (peachAttr.match(/debug(\s+|);/)) ? true : false;
-    peach.autoRefresh  = (peachAttr.match(/autoRefresh(\s+|);/)) ? true : false;
-
-    function toTemplateFile(files,directory) {
-      var arr = [];
-      for (var i=0;i<files.length;i++) {
-        arr.push(directory+files[i]+'.ptl');
-      }
-      return arr;
+  toTemplateFile: function (files,directory) {
+    var arr = [];
+    for (var i=0;i<files.length;i++) {
+      arr.push(directory+files[i]+'.ptl');
     }
+    return arr;
+  },
+  loadTemplates: function (options,callback) {
+    var files     = options.templates;
+    var directory = options.directory||'templates/';
 
     function load (filesArray,index,callback) {
       function execute() {
@@ -594,7 +582,28 @@ var peach = {
       }
     }
 
-    load(templateFiles,0,function () {
+    load(peach.toTemplateFile(files,directory),0,function () {
+      if (typeof callback === 'function') {
+        callback();
+      }
+    });
+  },
+  init_default: function (data,options) {
+    var peachData     = $('div[data-peach]'); // Check to see if the data-peach is present, if not, throw an error
+    var output        = peachData.html();
+    var peachAttr     = peachData.attr('data-peach');
+    var directory     = options.directory||'templates/';
+    var files         = peach._clear(peachAttr.match(/templates:([\t\r\n\.\/a-zA-Z0-9_, ]+)(;|)/)[1]).replace(/ /g,'').split(',');
+    var templates     = {};
+    var timeStart     = new Date();
+    var container;
+
+    peach.initTemplate = output;
+    peach.initData     = data;
+    peach.debug        = (peachAttr.match(/debug(\s+|);/)) ? true : false;
+    peach.autoRefresh  = (peachAttr.match(/autoRefresh(\s+|);/)) ? true : false;
+
+    peach.loadTemplates({templates: files,directory: directory},function () {
       output = peach.start({output:output,data:data,templates:peach.templates});
       peach.setTime(timeStart);
       if ($('.peach-container').size() < 1) {
@@ -615,6 +624,5 @@ var peach = {
     } else {
       peach.init_compiled(data,options);
     }
-
   }
 }
